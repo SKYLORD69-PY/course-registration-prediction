@@ -1,0 +1,19 @@
+{
+    "model_name": "Workshop Enrollment Predictor",
+    "version": "v1",
+    "description": "Predicts the number of students enrolling in Engineering Workshop in the next academic term",
+    "algorithms": [
+        "Linear Regression",
+        "Ridge Regression",
+        "Random Forest Regressor",
+        "Gradient Boosting Regressor"
+    ],
+    "best_model": "Gradient Boosting",
+    "metrics": {
+        "mae": 3.159033558059959,
+        "rmse": 5.66733367935171,
+        "r2": 0.9071232859467376,
+        "mape": 52.66293691982193
+    },
+    "note": "Binary model file is generated locally via scripts/train.py"
+}
