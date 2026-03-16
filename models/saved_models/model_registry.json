@@ -8,12 +8,12 @@
         "Random Forest Regressor",
         "Gradient Boosting Regressor"
     ],
-    "best_model": "Gradient Boosting",
+    "best_model": "Random Forest",
     "metrics": {
-        "mae": 3.159033558059959,
-        "rmse": 5.66733367935171,
-        "r2": 0.9071232859467376,
-        "mape": 52.66293691982193
+        "mae": 1.3597566643808519,
+        "rmse": 3.3532137316178665,
+        "r2": 0.9667757366913878,
+        "mape": 27.013616332620778
     },
     "note": "Binary model file is generated locally via scripts/train.py"
 }

@@ -1,12 +1,10 @@
--- =========================
--- Table: terms_enrollment
--- =========================
+-- ==============================
+-- Main dataset table
+-- ==============================
 
 CREATE TABLE IF NOT EXISTS terms_enrollment (
 
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-
-    term_start_date DATE,
+    term_start_date TEXT,
     year INTEGER,
     term_label TEXT,
     school TEXT,
@@ -15,7 +13,6 @@ CREATE TABLE IF NOT EXISTS terms_enrollment (
     school_year2_population INTEGER,
     school_year3_population INTEGER,
     school_year4_population INTEGER,
-
     total_students_in_school INTEGER,
 
     enrolled_year1 INTEGER,
@@ -31,16 +28,17 @@ CREATE TABLE IF NOT EXISTS terms_enrollment (
     num_other INTEGER,
 
     avg_remaining_credits REAL,
-
     prev_term_enrollment INTEGER,
     prev2_term_enrollment INTEGER,
-    recent_trend INTEGER
+    recent_trend INTEGER,
+
+    dataset_version TEXT
 );
 
 
--- =========================
--- Table: model_history
--- =========================
+-- ==============================
+-- Model history
+-- ==============================
 
 CREATE TABLE IF NOT EXISTS model_history (
 
@@ -48,7 +46,6 @@ CREATE TABLE IF NOT EXISTS model_history (
 
     model_version TEXT,
     model_type TEXT,
-
     training_date TEXT,
 
     mae REAL,
@@ -59,7 +56,13 @@ CREATE TABLE IF NOT EXISTS model_history (
     model_path TEXT
 );
 
+
+-- ==============================
+-- Dataset version tracking
+-- ==============================
+
 CREATE TABLE IF NOT EXISTS dataset_versions (
+
     dataset_version TEXT PRIMARY KEY,
     created_at TEXT,
     rows_generated INTEGER,

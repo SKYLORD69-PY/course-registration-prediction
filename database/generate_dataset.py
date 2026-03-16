@@ -10,13 +10,13 @@ Key changes from earlier versions:
 - Output column 'enrollment_this_term' (you can use this as target shifted by 1 term for next-term prediction).
 """
 
+import os
 import random
 import numpy as np
 import pandas as pd
 from datetime import date
 
-random.seed(42)
-np.random.seed(42)
+
 
 # -------------------------
 # Config
@@ -85,6 +85,9 @@ def generate(
     years: number of *output* years (not counting warmup)
     warmup_years: how many years BEFORE start_year to simulate as warmup (default 2)
     """
+    random.seed(seed)
+    np.random.seed(seed)
+
     rows_all = []
 
     # initial intake (Year1) per school
@@ -277,9 +280,19 @@ def generate(
             df_out[["num_compulsory", "num_ge", "num_elective", "num_other"]].sum(axis=1)).all(), "Reason invariant failed"
 
     # Save
+    import os
+    os.makedirs(os.path.dirname(out_csv), exist_ok=True)
+    df_out["dataset_version"] = dataset_version
     df_out.to_csv(out_csv, index=False)
     print(f"Generated {out_csv} with {len(df_out)} rows (warmup_years={warmup_years})")
-    return df_out
+    
+    return {
+    "dataset_version": dataset_version,
+    "rows": len(df_out),
+    "file": out_csv
+}
+
+    
 
 # -------------------------
 # If run as script
@@ -290,3 +303,4 @@ if __name__ == "__main__":
     # show a few rows to inspect
     with pd.option_context("display.max_rows", 12, "display.max_columns", None):
         print(df.head(12).to_string(index=False))
+

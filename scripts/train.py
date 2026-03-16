@@ -131,8 +131,8 @@ def train_models():
 
     registry = {
         "model_name": "Workshop Enrollment Predictor",
-        "version": "v1",
-        "description": "Predicts the number of students enrolling in Engineering Workshop in the next academic term",
+        "version": "v1.2",
+        "description": "improved version of version 1",
         "algorithms": [
             "Linear Regression",
             "Ridge Regression",
