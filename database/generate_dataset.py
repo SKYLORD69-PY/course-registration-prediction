@@ -73,7 +73,14 @@ def _make_term_sequence(start_year, years, warmup_years):
 # -------------------------
 # Generator
 # -------------------------
-def generate(years=6, start_year=2020, warmup_years=2, out_csv="engineering_workshop_term_school_final_v2.csv"):
+def generate(
+    years=6,
+    start_year=2020,
+    warmup_years=2,
+    out_csv="data/engineering_workshop_term_school.csv",
+    dataset_version="v1.2",
+    seed=42
+):
     """
     years: number of *output* years (not counting warmup)
     warmup_years: how many years BEFORE start_year to simulate as warmup (default 2)
