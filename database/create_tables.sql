@@ -58,3 +58,10 @@ CREATE TABLE IF NOT EXISTS model_history (
 
     model_path TEXT
 );
+
+CREATE TABLE IF NOT EXISTS dataset_versions (
+    dataset_version TEXT PRIMARY KEY,
+    created_at TEXT,
+    rows_generated INTEGER,
+    notes TEXT
+);
