@@ -1,7 +1,7 @@
 {
     "model_name": "Workshop Enrollment Predictor",
-    "version": "v1",
-    "description": "Predicts the number of students enrolling in Engineering Workshop in the next academic term",
+    "version": "v1.2",
+    "description": "improved version of version 1",
     "algorithms": [
         "Linear Regression",
         "Ridge Regression",
@@ -10,10 +10,10 @@
     ],
     "best_model": "Random Forest",
     "metrics": {
-        "mae": 1.3597566643808519,
-        "rmse": 3.3532137316178665,
-        "r2": 0.9667757366913878,
-        "mape": 27.013616332620778
+        "mae": 4.302608695652173,
+        "rmse": 5.452226509697068,
+        "r2": 0.9043346915683174,
+        "mape": 57.58855167974378
     },
     "note": "Binary model file is generated locally via scripts/train.py"
 }

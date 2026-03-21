@@ -1,111 +1,101 @@
-"""
-Main pipeline controller for Hackathon 3 project.
-
-This script orchestrates:
-1. Database setup
-2. Data loading
-3. EDA generation
-4. Model training (optional)
-5. Model evaluation (optional)
-
-Default run does NOT retrain the model or regenerate data.
-"""
-
 import os
 import sys
-import argparse
+import subprocess
+from datetime import datetime
+from database.db_connection import get_engine
 
-# ==============================
-# Add project root to path
-# ==============================
-
-PROJECT_ROOT = os.path.abspath(os.path.dirname(__file__))
+PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(PROJECT_ROOT)
 
 # ==============================
-# Import modules
+# CONFIG
 # ==============================
+MODEL_BASE_FOLDER = os.path.join(PROJECT_ROOT, "models")
+ACTIVE_VERSION_FILE = os.path.join(MODEL_BASE_FOLDER, "active_version.txt")
 
-from scripts.load_data import create_tables, load_dataset
-from scripts.eda import run_eda
-from scripts.train import train_models
-from scripts.evaluate import evaluate_model, log_model_history
-
-
+def run_module(module_name):
+    subprocess.run(
+        [sys.executable, "-m", module_name],
+        check=True,
+        cwd=PROJECT_ROOT
+    )
 # ==============================
-# Pipeline Function
+# STEP 1 — GENERATE DATA
 # ==============================
+def generate_data():
+    print("\n📊 Generating dataset...\n")
+    run_module("database.generate_dataset")
 
-def run_pipeline(refresh_data=False, train=False, evaluate=False):
 
-    print("\n==============================")
-    print(" Hackathon 3 ML Pipeline ")
-    print("==============================\n")
+def load_data():
+    print("\n💾 Loading dataset into DB (APPEND MODE)...\n")
+    
+    import subprocess
+    subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "scripts.load_data",
+        ],
+        check=True,
+        cwd=PROJECT_ROOT
+    )
 
-    # Step 1 — Create DB tables
-    print("Creating database tables...")
-    create_tables()
 
-    # Step 2 — Load dataset
-    print("\nLoading dataset...")
-    load_dataset(overwrite=refresh_data)
+def train_model():
+    print("\n🤖 Training models (v2)...\n")
+    run_module("scripts.train")
 
-    # Step 3 — Generate EDA artifacts
-    print("\nRunning EDA...")
-    run_eda()
 
-    # Step 4 — Train models
-    if train:
-        print("\nTraining models...")
-        train_models()
-    else:
-        print("\nSkipping model training")
-
-    # Step 5 — Evaluate model
-    if evaluate:
-        print("\nEvaluating model...")
-        mae, rmse, r2, mape = evaluate_model()
-
-        log_model_history(mae, rmse, r2, mape)
-
-    else:
-        print("\nSkipping evaluation")
-
-    print("\nPipeline finished successfully\n")
-    print("To launch dashboard run:\n")
-    print("streamlit run dashboard/app.py\n")
+def evaluate_model():
+    print("\n📈 Evaluating model...\n")
+    run_module("scripts.evaluate")
 
 
 # ==============================
-# CLI Entry
+# STEP 5 — ACTIVATE VERSION
 # ==============================
+def activate_model(version="v2"):
+    print(f"\n🚀 Activating {version}...\n")
 
+    os.makedirs(MODEL_BASE_FOLDER, exist_ok=True)
+
+    with open(ACTIVE_VERSION_FILE, "w") as f:
+        f.write(version)
+
+    print(f"✅ {version} is now ACTIVE")
+
+
+# ==============================
+# STEP 6 — RUN DASHBOARD
+# ==============================
+def run_dashboard():
+    print("\n🌐 Launching Streamlit dashboard...\n")
+
+    subprocess.run([
+        "streamlit",
+        "run",
+        "dashboard/app.py"
+    ])
+
+
+# ==============================
+# MAIN PIPELINE
+# ==============================
 if __name__ == "__main__":
 
-    parser = argparse.ArgumentParser()
+    print("\n🔥 EDCAST AI — FULL PIPELINE START 🔥\n")
 
-    parser.add_argument(
-        "--refresh-data",
-        action="store_true",
-        help="Recreate dataset and overwrite database"
-    )
+    try:
+        generate_data()
+        load_data()
+        train_model()
+        evaluate_model()
+        activate_model("v2")
 
-    parser.add_argument(
-        "--train",
-        action="store_true",
-        help="Train ML models"
-    )
+        print("\n✅ SYSTEM READY\n")
 
-    parser.add_argument(
-        "--evaluate",
-        action="store_true",
-        help="Evaluate best model"
-    )
+        run_dashboard()
 
-    args = parser.parse_args()
-
-    run_pipeline(
-        refresh_data=args.refresh_data,
-        train=args.train,
-        evaluate=args.evaluate
-    )
+    except subprocess.CalledProcessError as e:
+        print("\n❌ PIPELINE FAILED:", e)

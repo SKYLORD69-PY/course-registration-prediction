@@ -15,7 +15,12 @@ import random
 import numpy as np
 import pandas as pd
 from datetime import date
+import time
 
+seed = None
+
+if seed is None:
+    seed = int(time.time())
 
 
 # -------------------------
@@ -79,12 +84,16 @@ def generate(
     warmup_years=2,
     out_csv="data/engineering_workshop_term_school.csv",
     dataset_version="v1.2",
-    seed=42
+    seed=None
+    
 ):
     """
     years: number of *output* years (not counting warmup)
     warmup_years: how many years BEFORE start_year to simulate as warmup (default 2)
     """
+
+   
+    
     random.seed(seed)
     np.random.seed(seed)
 
@@ -298,9 +307,9 @@ def generate(
 # If run as script
 # -------------------------
 if __name__ == "__main__":
-    # default: produce 6 years starting 2020 with 2-year warmup (so prevs populated)
-    df = generate(years=6, start_year=2020, warmup_years=2)
-    # show a few rows to inspect
+    meta = generate(years=6, start_year=2020, warmup_years=2)
+    df = pd.read_csv(meta["file"])
     with pd.option_context("display.max_rows", 12, "display.max_columns", None):
         print(df.head(12).to_string(index=False))
+
 

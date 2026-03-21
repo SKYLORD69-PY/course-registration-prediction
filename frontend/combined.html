@@ -1,0 +1,795 @@
+<!DOCTYPE html>
+<html class="h-full" lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  <title>EduCast AI - Unified SaaS Dashboard</title>
+
+  <!-- Chart.js + Tailwind -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              dark: '#0B1220',
+              card: '#111827',
+              accent: '#6366F1',
+              border: '#1F2937',
+              text: '#9CA3AF'
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: #0B1220; }
+    ::-webkit-scrollbar-thumb { background: #1F2937; border-radius: 10px; }
+    ::-webkit-scrollbar-thumb:hover { background: #6366F1; }
+    .glass-effect { background: rgba(17,24,39,0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.05); }
+    .active-tab { background: linear-gradient(90deg, rgba(99,102,241,0.2), rgba(99,102,241,0)); border-left:3px solid #6366F1; color:white; }
+  </style>
+</head>
+<body class="bg-brand-dark text-white h-full overflow-hidden flex flex-col font-sans">
+
+<header class="h-16 border-b border-brand-border flex items-center justify-between px-6 bg-brand-dark z-50">
+  <div class="flex items-center gap-3">
+    <div class="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center">
+      <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path d="M13 10V3L4 14h7v7l9-11h-7z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+      </svg>
+    </div>
+    <span class="text-xl font-bold tracking-tight">EduCast <span class="text-indigo-500">AI</span></span>
+  </div>
+
+  <div class="flex items-center gap-6">
+    <div class="hidden md:flex items-center bg-brand-card border border-brand-border rounded-full px-4 py-1.5 gap-3">
+      <div class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+      <span class="text-xs font-medium text-brand-text">SYSTEM LIVE</span>
+    </div>
+    <div class="flex items-center gap-4">
+      <div class="text-right hidden sm:block mr-3">
+        <p class="text-sm font-semibold">Pranav Bagul</p>
+        <p class="text-xs text-brand-text">Developer</p>
+      </div>
+      <img alt="Profile" class="w-10 h-10 rounded-full ring-2 ring-indigo-500/20"
+           src="https://lh3.googleusercontent.com/aida-public/AB6AXuBL82L5IXKIXtynFEChIh1nrc1dDJWFjVqe_jTgKAjB84pp9g9a0BGvl3OieEZIgECf2K9V7BrmuemuCLLsnOiUTxgM31xbj_-q3aE3yMaxx7jMeZSfmqPQn0UksAaUKRd1G9T1FJyRT-d6GuYFj9NT6OzKmNCMk-MHv-wBy6uuSHMKospwSlnVKB5HQC69j11HJZu5x5HzNsbW2Q7S4pgORfYZW63825WUdFu4MwymRFWdw6ZLrMrSNq2I1CobDvwtqDhAFg-yPiI"/>
+    </div>
+  </div>
+</header>
+
+<div class="flex flex-1 overflow-hidden">
+  <aside class="w-64 border-r border-brand-border flex flex-col justify-between py-6 bg-brand-dark overflow-y-auto">
+    <nav class="space-y-1 px-3">
+      <p class="px-3 text-[10px] font-bold text-brand-text uppercase tracking-widest mb-4">Command Center</p>
+
+      <button class="tab-btn active-tab w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all" data-tab="overview" onclick="switchTab('overview')">Overview</button>
+
+      <button class="tab-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-brand-text hover:text-white transition-all" data-tab="forecast" onclick="switchTab('forecast')">Prediction Studio</button>
+
+      <button class="tab-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-brand-text hover:text-white transition-all" data-tab="models" onclick="switchTab('models')">Model Performance</button>
+
+      <button class="tab-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-brand-text hover:text-white transition-all" data-tab="insights" onclick="switchTab('insights')">Behavior Insights</button>
+
+      <button class="tab-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-brand-text hover:text-white transition-all" data-tab="registry" onclick="switchTab('registry')">Model Registry</button>
+
+      <button class="tab-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-brand-text hover:text-white transition-all" data-tab="auto-learn" onclick="switchTab('auto-learn')">Auto-Learning</button>
+    </nav>
+
+    <div class="px-6 space-y-4">
+      <div class="p-4 rounded-xl bg-indigo-600/10 border border-indigo-500/20">
+        <p class="text-xs font-semibold text-indigo-400 mb-1">PRO LICENSE</p>
+        <p class="text-xs text-brand-text mb-3">Experimental Features Active</p>
+        <button class="w-full py-2 bg-indigo-600 hover:bg-indigo-500 rounded-lg text-xs font-bold transition-all">Upgrade Now</button>
+      </div>
+    </div>
+  </aside>
+
+  <main class="flex-1 overflow-y-auto bg-brand-dark p-8" id="main-content">
+    <!-- Overview -->
+    <section class="tab-content space-y-8" id="tab-overview">
+      <div data-purpose="header-section">
+        <h1 class="text-4xl font-bold mb-2">AI-Powered Enrollment Forecasting</h1>
+        <p class="text-brand-text">Optimize course planning using predictive analytics and student behavior insights.</p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-6" data-purpose="kpi-cards">
+        <div class="bg-brand-card border border-brand-border p-5 rounded-2xl">
+          <div class="flex items-center justify-between mb-3">
+            <span class="text-xs font-bold text-brand-text uppercase">Total Students</span>
+            <div class="p-2 bg-indigo-500/10 rounded-lg text-indigo-400">
+              <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a7 7 0 017 7v1H1v-1a7 7 0 017-7z"></path></svg>
+            </div>
+          </div>
+          <p class="text-3xl font-bold" id="kpi-total-students">—</p>
+          <p class="text-xs text-green-500 mt-2" id="kpi-total-trend">—</p>
+        </div>
+
+        <div class="bg-brand-card border border-brand-border p-5 rounded-2xl">
+          <div class="flex items-center justify-between mb-3">
+            <span class="text-xs font-bold text-brand-text uppercase">Predicted Enrollment</span>
+            <div class="p-2 bg-orange-500/10 rounded-lg text-orange-400">
+              <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zM8 7a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zM14 4a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z"></path></svg>
+            </div>
+          </div>
+          <p class="text-3xl font-bold" id="kpi-predicted-enrollment">—</p>
+          <p class="text-xs text-red-500 mt-2" id="kpi-predicted-trend">—</p>
+        </div>
+
+        <div class="bg-brand-card border border-brand-border p-5 rounded-2xl">
+          <div class="flex items-center justify-between mb-3">
+            <span class="text-xs font-bold text-brand-text uppercase">Best Model</span>
+            <div class="p-2 bg-blue-500/10 rounded-lg text-blue-400">
+              <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M11 3a1 1 0 10-2 0v1a1 1 0 102 0V3z"></path></svg>
+            </div>
+          </div>
+          <p class="text-xl font-bold truncate" id="kpi-best-model">—</p>
+          <p class="text-xs text-brand-text mt-2" id="kpi-best-model-meta">—</p>
+        </div>
+
+        <div class="bg-brand-card border border-brand-border p-5 rounded-2xl">
+          <div class="flex items-center justify-between mb-3">
+            <span class="text-xs font-bold text-brand-text uppercase">Model Accuracy (R²)</span>
+            <div class="p-2 bg-purple-500/10 rounded-lg text-purple-400">
+              <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z"></path></svg>
+            </div>
+          </div>
+          <p class="text-3xl font-bold" id="kpi-model-accuracy">—</p>
+          <p class="text-xs text-indigo-400 mt-2">Confidence</p>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div class="bg-brand-card border border-brand-border rounded-2xl p-6">
+          <div class="flex items-center justify-between mb-6">
+            <h3 class="font-bold">Enrollment Trend</h3>
+            <select id="trend-range" class="bg-brand-dark border-brand-border text-xs rounded-lg px-2 py-1">
+              <option>Last 6 Terms</option>
+              <option>Last 4 Terms</option>
+            </select>
+          </div>
+
+          <!-- Chart canvas for trend -->
+          <div class="h-64">
+            <canvas id="chart-trend" class="w-full h-64"></canvas>
+          </div>
+
+          <div class="mt-4 grid grid-cols-4 gap-4 text-center">
+            <div><div class="text-xs text-brand-text">Independence</div><div id="term_independence" class="text-lg font-bold">—</div></div>
+            <div><div class="text-xs text-brand-text">Festivals</div><div id="term_festivals" class="text-lg font-bold">—</div></div>
+            <div><div class="text-xs text-brand-text">Republic</div><div id="term_republic" class="text-lg font-bold">—</div></div>
+            <div><div class="text-xs text-brand-text">Colors</div><div id="term_colors" class="text-lg font-bold">—</div></div>
+          </div>
+        </div>
+
+        <div class="bg-brand-card border border-brand-border rounded-2xl p-6">
+          <h3 class="font-bold mb-6">Enrollment by School</h3>
+
+          <!-- doughnut chart for school distribution -->
+          <div class="flex items-center justify-center h-64 relative">
+            <canvas id="chart-by-school" class="w-48 h-48"></canvas>
+            <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
+              <div class="text-center">
+                <p class="text-3xl font-bold" id="school_top_percent">—</p>
+                <p class="text-xs text-brand-text uppercase tracking-widest" id="school_top_label">—</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="absolute bottom-0 left-0 right-0 flex justify-center gap-4 text-[10px] font-bold text-brand-text uppercase mt-6">
+            <div class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-indigo-500"></span> STEM</div>
+            <div class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-blue-400"></span> Arts</div>
+            <div class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-purple-500"></span> Business</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Forecast -->
+    <section class="tab-content hidden space-y-8" id="tab-forecast">
+      <h1 class="text-4xl font-bold">Prediction Studio</h1>
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div class="lg:col-span-2 bg-brand-card border border-brand-border rounded-2xl p-8 space-y-8">
+          <div class="flex items-center gap-3 mb-4">
+            <h2 class="text-lg font-bold">Input Parameters</h2>
+          </div>
+
+          <div class="grid grid-cols-2 gap-6">
+            <div>
+              <label class="block text-xs font-bold text-brand-text uppercase mb-2">Target Institution</label>
+              <select id="input-institution" class="w-full bg-brand-dark border-brand-border rounded-xl px-4 py-3 text-sm"></select>
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-brand-text uppercase mb-2">Forecast Term</label>
+              <select id="input-term" class="w-full bg-brand-dark border-brand-border rounded-xl px-4 py-3 text-sm">
+                <option value="independence">Independence</option>
+                <option value="festivals">Festivals</option>
+                <option value="republic">Republic</option>
+                <option value="colors">Colors</option>
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-brand-text uppercase mb-4">Student Population History</label>
+            <div class="grid grid-cols-4 gap-4">
+              <div class="bg-brand-dark border border-brand-border p-3 rounded-xl text-center">
+                <p class="text-[10px] text-brand-text mb-1">YEAR 1</p>
+                <input id="input-y1" class="w-full bg-transparent border-none text-center p-0 font-bold focus:ring-0" type="number" value="0"/>
+              </div>
+              <div class="bg-brand-dark border border-brand-border p-3 rounded-xl text-center">
+                <p class="text-[10px] text-brand-text mb-1">YEAR 2</p>
+                <input id="input-y2" class="w-full bg-transparent border-none text-center p-0 font-bold focus:ring-0" type="number" value="0"/>
+              </div>
+              <div class="bg-brand-dark border border-brand-border p-3 rounded-xl text-center">
+                <p class="text-[10px] text-brand-text mb-1">YEAR 3</p>
+                <input id="input-y3" class="w-full bg-transparent border-none text-center p-0 font-bold focus:ring-0" type="number" value="0"/>
+              </div>
+              <div class="bg-brand-dark border border-brand-border p-3 rounded-xl text-center">
+                <p class="text-[10px] text-brand-text mb-1">YEAR 4</p>
+                <input id="input-y4" class="w-full bg-transparent border-none text-center p-0 font-bold focus:ring-0" type="number" value="0"/>
+              </div>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-3 gap-4">
+            <div>
+              <label class="block text-xs font-bold text-brand-text uppercase mb-2">Remaining Credits (avg)</label>
+              <input id="input-credits" type="number" class="w-full bg-brand-dark border-brand-border rounded-xl px-4 py-3 text-sm" value="20"/>
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-brand-text uppercase mb-2">Prev Term Enrollment</label>
+              <input id="input-prev1" type="number" class="w-full bg-brand-dark border-brand-border rounded-xl px-4 py-3 text-sm" value="0"/>
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-brand-text uppercase mb-2">Prev-2 Term Enrollment</label>
+              <input id="input-prev2" type="number" class="w-full bg-brand-dark border-brand-border rounded-xl px-4 py-3 text-sm" value="0"/>
+            </div>
+          </div>
+
+          <button id="btn-run-sim" class="w-full bg-indigo-600 hover:bg-indigo-500 py-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-all">Run Simulation</button>
+        </div>
+
+        <div class="space-y-6">
+          <div class="bg-gradient-to-br from-indigo-900/40 to-brand-card border border-indigo-500/20 rounded-2xl p-8 text-center relative overflow-hidden">
+            <div class="absolute top-4 right-4 bg-green-500/10 text-green-400 text-[10px] font-bold px-3 py-1 rounded-full border border-green-500/20">Confidence: High</div>
+            <p class="text-xs font-bold text-indigo-400 uppercase tracking-widest mb-6">Projected Result</p>
+            <h2 class="text-8xl font-black mb-2" id="projected-result">—</h2>
+            <p class="text-brand-text text-lg" id="projected-label">Students Expected</p>
+            <div class="mt-12 grid grid-cols-2 gap-4 border-t border-brand-border pt-6">
+              <div>
+                <p class="text-[10px] text-brand-text uppercase">Current Trend</p>
+                <p class="text-red-400 font-bold" id="projected-trend">—</p>
+              </div>
+              <div>
+                <p class="text-[10px] text-brand-text uppercase">Variance</p>
+                <p class="text-red-400 font-bold" id="projected-variance">—</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="bg-brand-card border border-brand-border rounded-2xl p-6">
+            <div class="flex gap-4">
+              <div class="w-10 h-10 rounded-full bg-indigo-500/20 flex items-center justify-center shrink-0">
+                <svg class="w-5 h-5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+              </div>
+              <div>
+                <h4 class="font-bold mb-2">AI Enrollment Insight</h4>
+                <p class="text-sm text-brand-text leading-relaxed" id="ai-insight">—</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Models, Insights, Registry, Auto-Learn sections are unchanged visually; content populated by JS -->
+
+    <section class="tab-content hidden space-y-8" id="tab-models">
+      <div class="flex items-center justify-between">
+        <div>
+          <h1 class="text-4xl font-bold">Model Performance</h1>
+          <p class="text-brand-text">Comparative evaluation of predictive academic engines.</p>
+        </div>
+        <div class="flex gap-3">
+          <button id="export-report" class="px-4 py-2 border border-brand-border rounded-lg text-sm font-bold hover:bg-brand-card transition-all">Export Report</button>
+          <button id="btn-retrain-all" class="px-4 py-2 bg-indigo-600 rounded-lg text-sm font-bold hover:bg-indigo-500 transition-all">Retrain All</button>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div class="bg-brand-card border border-brand-border rounded-2xl p-6 relative">
+          <div class="absolute top-6 right-6 px-3 py-1 bg-indigo-500/20 text-indigo-400 text-[10px] font-bold rounded-full border border-indigo-500/30">★ BEST MODEL</div>
+          <h3 class="text-2xl font-bold mb-4" id="model-name">—</h3>
+          <p class="text-sm text-brand-text mb-8" id="model-desc">—</p>
+
+          <div class="space-y-6">
+            <div>
+              <div class="flex justify-between text-xs font-bold mb-2">
+                <span>R² SCORE</span>
+                <span class="text-indigo-400" id="model-r2">—</span>
+              </div>
+              <div class="h-2 w-full bg-brand-dark rounded-full overflow-hidden">
+                <div id="model-r2-bar" class="h-full bg-indigo-500 w-0"></div>
+              </div>
+            </div>
+
+            <div>
+              <div class="flex justify-between text-xs font-bold mb-2">
+                <span>MAE</span>
+                <span class="text-green-400" id="model-mae">—</span>
+              </div>
+              <div class="h-2 w-full bg-brand-dark rounded-full overflow-hidden">
+                <div id="model-mae-bar" class="h-full bg-green-500 w-0"></div>
+              </div>
+            </div>
+          </div>
+
+          <button id="btn-deploy-pipeline" class="w-full mt-10 py-3 bg-indigo-600/10 border border-indigo-500/30 text-indigo-400 rounded-xl font-bold hover:bg-indigo-600 hover:text-white transition-all">Deploy Pipeline</button>
+        </div>
+
+        <div class="lg:col-span-2 bg-brand-card border border-brand-border rounded-2xl p-6">
+          <div class="flex items-center justify-between mb-8">
+            <h3 class="font-bold">Trade-off Analysis (MAE vs Complexity)</h3>
+            <div class="flex gap-4 text-[10px] font-bold text-brand-text uppercase">
+              <span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-indigo-500"></span> Deep Learning</span>
+              <span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-green-500"></span> Ensemble</span>
+            </div>
+          </div>
+
+          <div class="h-64 bg-brand-dark/50 rounded-xl border border-brand-border flex items-center justify-center relative">
+            <p class="text-brand-text text-xs uppercase opacity-50">Visual Chart Placeholder</p>
+          </div>
+
+          <div class="grid grid-cols-4 gap-4 mt-6">
+            <div class="p-4 bg-brand-dark rounded-xl border border-brand-border">
+              <p class="text-[10px] text-brand-text font-bold uppercase mb-1">AVG R²</p>
+              <p class="text-xl font-bold" id="stat-avg-r2">—</p>
+            </div>
+            <div class="p-4 bg-brand-dark rounded-xl border border-brand-border">
+              <p class="text-[10px] text-brand-text font-bold uppercase mb-1">TRAIN TIME</p>
+              <p class="text-xl font-bold" id="stat-train-time">—</p>
+            </div>
+            <div class="p-4 bg-brand-dark rounded-xl border border-brand-border">
+              <p class="text-[10px] text-brand-text font-bold uppercase mb-1">HYPERPARAMS</p>
+              <p class="text-xl font-bold" id="stat-hyperparams">—</p>
+            </div>
+            <div class="p-4 bg-brand-dark rounded-xl border border-brand-border">
+              <p class="text-[10px] text-brand-text font-bold uppercase mb-1">CROSS VAL</p>
+              <p class="text-xl font-bold text-indigo-400" id="stat-crossval">—</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="tab-content hidden space-y-8" id="tab-insights">
+      <h1 class="text-4xl font-bold">Behavior Insights</h1>
+
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div class="bg-brand-card border border-brand-border p-6 rounded-2xl">
+          <div class="w-10 h-10 bg-blue-500/10 rounded-xl flex items-center justify-center text-blue-400 mb-4">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+          </div>
+          <p class="text-xs font-bold text-brand-text uppercase mb-2">Key Driver</p>
+          <h4 class="text-lg font-bold leading-tight" id="insight-1">—</h4>
+        </div>
+
+        <div class="bg-brand-card border border-brand-border p-6 rounded-2xl">
+          <div class="w-10 h-10 bg-green-500/10 rounded-xl flex items-center justify-center text-green-400 mb-4">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
+          </div>
+          <p class="text-xs font-bold text-brand-text uppercase mb-2">Growth Peak</p>
+          <h4 class="text-lg font-bold leading-tight" id="insight-2">—</h4>
+        </div>
+
+        <div class="bg-brand-card border border-brand-border p-6 rounded-2xl border-orange-500/30 bg-orange-500/5">
+          <div class="w-10 h-10 bg-orange-500/10 rounded-xl flex items-center justify-center text-orange-400 mb-4">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+          </div>
+          <p class="text-xs font-bold text-orange-400 uppercase mb-2">Critical Alert</p>
+          <h4 class="text-lg font-bold leading-tight" id="insight-3">—</h4>
+        </div>
+
+        <div class="bg-brand-card border border-brand-border p-6 rounded-2xl">
+          <div class="w-10 h-10 bg-indigo-500/10 rounded-xl flex items-center justify-center text-indigo-400 mb-4">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4"></path></svg>
+          </div>
+          <p class="text-xs font-bold text-brand-text uppercase mb-2">AI Panel</p>
+          <h4 class="text-lg font-bold leading-tight" id="insight-4">—</h4>
+        </div>
+      </div>
+    </section>
+
+    <section class="tab-content hidden space-y-8" id="tab-registry">
+      <div class="flex items-center justify-between">
+        <h1 class="text-4xl font-bold">Model Registry</h1>
+        <button id="register-model" class="px-6 py-3 bg-indigo-600 hover:bg-indigo-500 rounded-xl font-bold transition-all flex items-center gap-2">Register New Model</button>
+      </div>
+
+      <div class="flex gap-8 border-b border-brand-border">
+        <button class="pb-4 text-indigo-500 border-b-2 border-indigo-500 font-bold text-sm">All Models</button>
+        <button class="pb-4 text-brand-text hover:text-white font-bold text-sm transition-all">Production</button>
+        <button class="pb-4 text-brand-text hover:text-white font-bold text-sm transition-all">Staging</button>
+      </div>
+
+      <div class="space-y-4" id="registry-cards"></div>
+    </section>
+
+    <section class="tab-content hidden space-y-8" id="tab-auto-learn">
+      <div data-purpose="header">
+        <h1 class="text-4xl font-bold mb-2">Auto-Learning System</h1>
+        <p class="text-brand-text">Real-time model optimization and automated retraining pipeline.</p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="bg-brand-card border border-brand-border p-6 rounded-2xl">
+          <div class="flex items-center justify-between mb-4">
+            <p class="text-xs font-bold text-brand-text uppercase">System Status</p>
+            <div class="w-3 h-3 bg-green-500 rounded-full animate-pulse shadow-[0_0_10px_#22c55e]"></div>
+          </div>
+          <p class="text-4xl font-black tracking-tighter mb-2" id="auto-status">LIVE</p>
+          <p class="text-[10px] font-bold text-green-400 tracking-widest uppercase">All Systems Operational</p>
+        </div>
+
+        <div class="bg-brand-card border border-brand-border p-6 rounded-2xl">
+          <p class="text-xs font-bold text-brand-text uppercase mb-4">Last Trained</p>
+          <p class="text-3xl font-bold mb-2" id="auto-last-trained">—</p>
+          <p class="text-[10px] text-brand-text uppercase font-bold">Duration: —</p>
+        </div>
+
+        <div class="bg-brand-card border border-brand-border p-6 rounded-2xl">
+          <p class="text-xs font-bold text-brand-text uppercase mb-4">Next Retrain</p>
+          <p class="text-3xl font-bold mb-2 text-indigo-400" id="auto-next-retrain">—</p>
+          <p class="text-[10px] text-indigo-400 font-bold uppercase">T-Minus —</p>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-4">
+        <button id="btn-retrain" class="bg-indigo-600 hover:bg-indigo-500 py-6 rounded-2xl flex flex-col items-center justify-center gap-3 transition-all">Retrain Model</button>
+        <button id="btn-evaluate" class="bg-brand-card border border-brand-border hover:bg-brand-border py-6 rounded-2xl flex flex-col items-center justify-center gap-3 transition-all">Evaluate</button>
+        <button id="btn-refresh" class="bg-brand-card border border-brand-border hover:bg-brand-border py-6 rounded-2xl flex flex-col items-center justify-center gap-3 transition-all">Refresh Data</button>
+      </div>
+
+      <div class="bg-black/40 border border-brand-border rounded-2xl p-6 font-mono text-sm">
+        <div class="flex items-center justify-between mb-6 border-b border-brand-border pb-4">
+          <div class="flex items-center gap-4">
+            <svg class="w-5 h-5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+            <span class="font-bold">System Logs</span>
+          </div>
+          <div class="flex gap-2">
+            <span class="text-[10px] bg-brand-border px-2 py-0.5 rounded text-brand-text">AUTO-SCROLL ON</span>
+            <button id="btn-clear-logs" class="text-[10px] bg-brand-border px-2 py-0.5 rounded text-brand-text hover:text-white">CLEAR</button>
+          </div>
+        </div>
+
+        <div class="space-y-2 opacity-90 h-64 overflow-y-auto pr-2" id="logs-panel" style="white-space:pre-wrap; font-family:monospace;"></div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<footer class="h-10 border-t border-brand-border bg-brand-dark flex items-center justify-center px-6 text-[10px] text-brand-text uppercase tracking-widest font-medium shrink-0">
+  Powered by AI-driven Academic Forecasting Engine © 2024 EduCast Systems
+</footer>
+
+<!-- Tab navigation -->
+<script>
+  function switchTab(tabId) {
+    document.querySelectorAll('.tab-content').forEach(content => content.classList.add('hidden'));
+    const el = document.getElementById('tab-' + tabId);
+    if (el) el.classList.remove('hidden');
+
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.classList.remove('active-tab');
+      btn.classList.remove('text-white');
+      btn.classList.add('text-brand-text');
+    });
+    const activeBtn = document.querySelector(`[data-tab="${tabId}"]`);
+    if (activeBtn) {
+      activeBtn.classList.add('active-tab');
+      activeBtn.classList.add('text-white');
+      activeBtn.classList.remove('text-brand-text');
+    }
+  }
+</script>
+
+<!-- Live data & UI binding -->
+<script>
+  const API = window.__API_BASE__ || location.origin;
+
+  async function fetchJSON(url, opts) {
+    try {
+      const res = await fetch(url, opts);
+      if (!res.ok) {
+        console.warn('fetch failed', url, res.status);
+        return null;
+      }
+      return await res.json();
+    } catch (e) {
+      console.warn('fetch error', url, e);
+      return null;
+    }
+  }
+
+  // Charts
+  let trendChart = null;
+  let bySchoolChart = null;
+
+  function initCharts() {
+    const ctx = document.getElementById('chart-trend')?.getContext('2d');
+    if (ctx) {
+      trendChart = new Chart(ctx, {
+        type: 'line',
+        data: { labels: [], datasets: [{ label: 'Avg enrollment', data: [], tension: 0.3, fill: true, backgroundColor: 'rgba(99,102,241,0.12)', borderColor: '#6366F1' }] },
+        options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
+      });
+    }
+    const ctx2 = document.getElementById('chart-by-school')?.getContext('2d');
+    if (ctx2) {
+      bySchoolChart = new Chart(ctx2, {
+        type: 'doughnut',
+        data: { labels: [], datasets: [{ data: [], backgroundColor: ['#6366F1','#60A5FA','#7C3AED','#F97316','#10B981'] }] },
+        options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+      });
+    }
+  }
+
+  function updateCharts(by_term = {}, by_school = {}) {
+    try {
+      const order = ['independence','festivals','republic','colors'];
+      const labels = order.map(k => k.charAt(0).toUpperCase() + k.slice(1));
+      const values = order.map(k => Math.round(by_term[k] ?? 0));
+      if (trendChart) { trendChart.data.labels = labels; trendChart.data.datasets[0].data = values; trendChart.update(); }
+
+      if (bySchoolChart) {
+        const labs = Object.keys(by_school || {});
+        const vals = labs.map(l => Math.round(by_school[l] ?? 0));
+        bySchoolChart.data.labels = labs;
+        bySchoolChart.data.datasets[0].data = vals;
+        bySchoolChart.update();
+      }
+    } catch (e) { console.warn('updateCharts error', e); }
+  }
+
+  async function loadOverview() {
+    const d = await fetchJSON(API + '/overview');
+    if (!d) return;
+
+    document.getElementById('kpi-total-students').innerText = d.total_students ?? '—';
+    document.getElementById('kpi-total-trend').innerText = d.total_change ? d.total_change : '';
+    document.getElementById('kpi-predicted-enrollment').innerText = Math.round(d.predicted_next_term ?? d.avg_enrollment ?? 0);
+    document.getElementById('kpi-predicted-trend').innerText = d.predicted_trend_text ?? '';
+    document.getElementById('kpi-best-model').innerText = d.best_model ?? (d.models_discovered?.[0] ?? '—');
+
+    // show R2, MAE, MAPE if present
+    const metrics = d.metrics || {};
+    let metaText = '';
+    if (metrics.r2 !== undefined) metaText += `R² ${Number(metrics.r2).toFixed(2)} `;
+    if (metrics.mae !== undefined) metaText += `• MAE ${metrics.mae} `;
+    if (metrics.mape !== undefined) metaText += `• MAPE ${metrics.mape}%`;
+    document.getElementById('kpi-best-model-meta').innerText = metaText.trim();
+
+    document.getElementById('kpi-model-accuracy').innerText = metrics.r2 ? Number(metrics.r2).toFixed(2) : '—';
+
+    document.getElementById('term_independence').innerText = Math.round(d.by_term?.independence ?? 0);
+    document.getElementById('term_festivals').innerText = Math.round(d.by_term?.festivals ?? 0);
+    document.getElementById('term_republic').innerText = Math.round(d.by_term?.republic ?? 0);
+    document.getElementById('term_colors').innerText = Math.round(d.by_term?.colors ?? 0);
+
+    const by_school = d.by_school || {};
+    let topSchool = '—', topVal = 0, total = 0;
+    Object.entries(by_school).forEach(([s,v]) => { total += Number(v||0); if (Number(v||0) > topVal) { topVal = Number(v||0); topSchool = s; }});
+    document.getElementById('school_top_percent').innerText = total ? Math.round((topVal/total)*100) + '%' : '—';
+    document.getElementById('school_top_label').innerText = topSchool;
+
+    document.getElementById('insight-1').innerText = d.insights?.driver ?? 'Credit pressure is a key driver';
+    document.getElementById('insight-2').innerText = d.insights?.peak ?? 'Independence term peak demand';
+    document.getElementById('insight-3').innerText = d.insights?.alert ?? 'Colors term has lowest enrollment';
+    document.getElementById('insight-4').innerText = d.insights?.note ?? 'VSST drives majority of enrollments';
+
+    updateCharts(d.by_term || {}, d.by_school || {});
+    populateRegistry(d.registry || d.models_discovered || d);
+  }
+
+  function populateRegistry(regData) {
+    const container = document.getElementById('registry-cards');
+    if (!container) return;
+    container.innerHTML = '';
+
+    if (!regData) {
+      container.innerHTML = '<div class="text-brand-text p-4">No registry available</div>';
+      return;
+    }
+
+    // If array -> simple list
+    if (Array.isArray(regData)) {
+      regData.forEach(name => {
+        const div = document.createElement('div');
+        div.className = 'bg-brand-card border border-brand-border rounded-2xl p-6 hover:border-indigo-500/50 transition-all group';
+        div.innerHTML = `<div class="flex items-center justify-between"><div><h3 class="text-xl font-bold">${name}</h3><div class="text-xs text-brand-text">Auto-detected model</div></div><div><button class="px-3 py-2 text-sm border rounded" onclick="showModel('${name}')">Details</button></div></div>`;
+        container.appendChild(div);
+      });
+      return;
+    }
+
+    // regData is object (registry)
+    const all = regData.all_models || regData;
+    Object.entries(all).forEach(([name, meta]) => {
+      const card = document.createElement('div');
+      card.className = 'bg-brand-card border border-brand-border rounded-2xl p-6 hover:border-indigo-500/50 transition-all group';
+      card.innerHTML = `
+        <div class="flex items-center justify-between mb-4">
+          <div class="flex items-center gap-4">
+            <div class="w-12 h-12 bg-indigo-500/10 rounded-xl flex items-center justify-center text-indigo-500">
+              <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"></path></svg>
+            </div>
+            <div>
+              <div class="flex items-center gap-3">
+                <h3 class="text-xl font-bold">${name}</h3>
+                <span class="bg-green-500/10 text-green-400 text-[10px] font-bold px-2 py-0.5 rounded border border-green-500/20">${meta.status || 'model'}</span>
+              </div>
+              <div class="flex items-center gap-4 mt-1 text-xs text-brand-text font-medium">
+                <span>R²: ${meta.r2 ?? '—'}</span>
+                <span>MAE: ${meta.mae ?? '—'}</span>
+                <span>Updated: ${meta.updated ?? '—'}</span>
+              </div>
+            </div>
+          </div>
+          <div class="flex items-center gap-2">
+            <button class="px-3 py-2 text-sm border rounded" onclick="showModel('${name}')">Details</button>
+            <button class="px-3 py-2 text-sm bg-indigo-600 text-white rounded" onclick="deployModel('${name}')">Deploy</button>
+          </div>
+        </div>`;
+      container.appendChild(card);
+    });
+  }
+
+  async function showModel(name) {
+    const m = await fetchJSON(API + '/model/' + encodeURIComponent(name));
+    if (!m) return alert('Model not found');
+    // quick modal fallback
+    alert(JSON.stringify(m.meta || m, null, 2));
+  }
+
+  async function deployModel(name) {
+    // Backend currently has /deploy-pipeline for running pipeline; adapt if you implement model-specific endpoint
+    const res = await fetchJSON(API + '/deploy-pipeline', { method: 'POST' });
+    if (res && res.status) alert('Pipeline deploy started. PID: ' + (res.pid || 'unknown'));
+    else alert('Deploy failed or backend unreachable');
+  }
+
+  async function runPrediction() {
+    const payload = {
+      school: document.getElementById('input-institution').value || 'VSST',
+      term_label: document.getElementById('input-term').value || 'independence',
+      school_year1_population: Number(document.getElementById('input-y1').value || 0),
+      school_year2_population: Number(document.getElementById('input-y2').value || 0),
+      school_year3_population: Number(document.getElementById('input-y3').value || 0),
+      school_year4_population: Number(document.getElementById('input-y4').value || 0),
+      total_students_in_school: (Number(document.getElementById('input-y1').value||0) + Number(document.getElementById('input-y2').value||0) + Number(document.getElementById('input-y3').value||0) + Number(document.getElementById('input-y4').value||0)),
+      avg_remaining_credits: Number(document.getElementById('input-credits').value || 0),
+      prev_term_enrollment: Number(document.getElementById('input-prev1').value || 0),
+      prev2_term_enrollment: Number(document.getElementById('input-prev2').value || 0),
+      recent_trend: Number(document.getElementById('input-prev1').value || 0) - Number(document.getElementById('input-prev2').value || 0)
+    };
+
+    const btn = document.getElementById('btn-run-sim');
+    btn.disabled = true;
+    btn.innerText = 'Running...';
+
+    const out = await fetchJSON(API + '/predict', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+
+    if (out && out.prediction !== undefined) {
+      document.getElementById('projected-result').innerText = Math.round(out.prediction);
+      document.getElementById('projected-trend').innerText = out.trend_text || '—';
+      document.getElementById('projected-variance').innerText = out.variance ? (out.variance + '%') : '—';
+      document.getElementById('ai-insight').innerText = out.insight || ('Prediction by ' + (out.model_used||'model'));
+    } else {
+      document.getElementById('projected-result').innerText = 'Error';
+      document.getElementById('ai-insight').innerText = (out && out.error) ? out.error : 'Prediction failed';
+    }
+
+    btn.disabled = false;
+    btn.innerText = 'Run Simulation';
+  }
+
+  async function clickTrain() {
+    await fetchJSON(API + '/train', { method: 'POST' });
+    alert('Train request sent.');
+  }
+  async function clickEvaluate() {
+    await fetchJSON(API + '/evaluate', { method: 'POST' });
+    alert('Evaluate request sent.');
+  }
+  async function clickRefresh() {
+    await fetchJSON(API + '/refresh', { method: 'POST' });
+    alert('Refresh request sent.');
+  }
+
+  async function pollLogs() {
+    const panel = document.getElementById('logs-panel');
+    const res = await fetch(API + '/logs').catch(()=>null);
+    if (!res || !res.ok) return;
+    const j = await res.json().catch(()=>null);
+    if (!j) return;
+    const lines = j.lines || [];
+    panel.innerText = lines.join('\n');
+    panel.scrollTop = panel.scrollHeight;
+  }
+
+  async function loadModelsPage() {
+    const m = await fetchJSON(API + '/models');
+    if (!m) return;
+    populateRegistry(m.registry || m.models || m);
+    const best = m?.best_model || m?.registry?.best_model || null;
+    document.getElementById('model-name').innerText = best || '—';
+    document.getElementById('model-desc').innerText = (m?.registry?.note || m?.note || 'Model metadata') || '—';
+    document.getElementById('model-r2').innerText = m?.registry?.metrics?.r2 ?? m?.metrics?.r2 ?? '—';
+    const r2Value = m?.registry?.metrics?.r2 ?? m?.metrics?.r2;
+    const r2 = Number(r2Value || 0);
+    document.getElementById('model-r2-bar').style.width = Math.min(100, Math.round((r2 || 0) * 100)) + '%';
+    document.getElementById('model-mae').innerText = m?.registry?.metrics?.mae ?? m?.metrics?.mae ?? '—';
+    document.getElementById('model-mae-bar').style.width = (m?.registry?.metrics?.mae ? Math.min(100, 100 - Math.round(m.registry.metrics.mae)) + '%' : '0%');
+    document.getElementById('stat-avg-r2').innerText = (m?.registry?.metrics?.r2 ?? m?.metrics?.r2 ?? '—');
+    document.getElementById('stat-train-time').innerText = m?.meta?.train_time ?? '—';
+    document.getElementById('stat-hyperparams').innerText = m?.meta?.hyperparams ?? '—';
+    document.getElementById('stat-crossval').innerText = m?.meta?.crossval ?? '—';
+  }
+
+  function attachUIEvents() {
+    document.getElementById('btn-run-sim').addEventListener('click', runPrediction);
+    document.getElementById('btn-retrain').addEventListener('click', clickTrain);
+    document.getElementById('btn-evaluate').addEventListener('click', clickEvaluate);
+    document.getElementById('btn-refresh').addEventListener('click', clickRefresh);
+    document.getElementById('btn-clear-logs').addEventListener('click', () => { document.getElementById('logs-panel').innerText = ''; });
+    document.getElementById('btn-deploy-pipeline').addEventListener('click', async () => {
+      const res = await fetchJSON(API + '/deploy-pipeline', { method: 'POST' });
+      if (res && res.status) alert('Pipeline started (PID: ' + (res.pid||'unknown') + ')');
+      else alert('Deploy failed');
+    });
+  }
+
+  async function initUI() {
+    initCharts();
+    attachUIEvents();
+    // populate institution selector from overview.by_school
+    const ov = await fetchJSON(API + '/overview');
+    const inst = document.getElementById('input-institution');
+    if (ov && ov.by_school) {
+      inst.innerHTML = '';
+      const schools = Object.keys(ov.by_school);
+      if (schools.length === 0) inst.innerHTML = '<option>VSST</option>';
+      else schools.forEach(s => inst.innerHTML += `<option>${s}</option>`);
+    } else {
+      inst.innerHTML = '<option>VSST</option>';
+    }
+
+    await loadOverview();
+    await loadModelsPage();
+    pollLogs();
+
+    setInterval(loadOverview, 20000);
+    setInterval(loadModelsPage, 60000);
+    setInterval(pollLogs, 2000);
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    initUI();
+    switchTab('overview');
+  });
+</script>
+
+</body>
+</html>

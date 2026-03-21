@@ -1,19 +1,28 @@
 # scripts/load_data.py
-import os, pandas as pd
+
+import os
+import sys
+import pandas as pd
+
+# ==============================
+# Fix import path (IMPORTANT)
+# ==============================
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+sys.path.append(PROJECT_ROOT)
+
 from database.db_connection import get_engine, get_connection
 from database.generate_dataset import generate
-from project_config import DATASET_FILE, DATA_FOLDER
+from project_config import DATASET_FILE
 
+
+# ==============================
+# CREATE TABLES
+# ==============================
 def create_tables():
-
-    from database.db_connection import get_connection
-    import os
-
     conn = get_connection()
 
     sql_path = os.path.join(
-        os.path.dirname(__file__),
-        "..",
+        PROJECT_ROOT,
         "database",
         "create_tables.sql"
     )
@@ -22,63 +31,115 @@ def create_tables():
         sql_script = f.read()
 
     conn.executescript(sql_script)
-
     conn.commit()
     conn.close()
 
-    print("Database tables created successfully")
+    print("✅ Database tables ready")
 
-def load_dataset(overwrite=False, append=False, dataset_version=None, generate_if_missing=True, seed=42, note=""):
-    """
-    overwrite   -> replace the terms_enrollment table
-    append      -> append rows from CSV (must include dataset_version column)
-    default     -> if table empty, load; else skip (safe)
-    """
+
+# ==============================
+# LOAD DATASET
+# ==============================
+def load_dataset(
+    overwrite=False,
+    append=True,   # 🔥 default append for SaaS behavior
+    dataset_version=None,
+    generate_if_missing=True,
+    seed=None,
+    note="Auto pipeline run"
+):
     engine = get_engine()
 
-    # ensure CSV exists (generate if required)
+    # --------------------------
+    # Generate dataset if missing
+    # --------------------------
     if not os.path.exists(DATASET_FILE):
-        if generate_if_missing:
-            meta = generate(out_csv=DATASET_FILE, dataset_version=dataset_version or f"v{pd.Timestamp.now().strftime('%Y%m%d%H%M')}", seed=seed)
-        else:
-            raise FileNotFoundError(DATASET_FILE)
+        print("📊 Dataset not found → generating new dataset...")
+
+        meta = generate(
+            out_csv=DATASET_FILE,
+            dataset_version=dataset_version or f"v{pd.Timestamp.now().strftime('%Y%m%d%H%M%S')}",
+            seed=seed
+        )
     else:
         meta = None
 
+    # --------------------------
+    # Load CSV
+    # --------------------------
     df = pd.read_csv(DATASET_FILE)
-    if "dataset_version" not in df.columns:
-        df["dataset_version"] = dataset_version or (meta["dataset_version"] if meta else "v_unknown")
 
-    # check current row count
+    # Ensure dataset_version column exists
+    if "dataset_version" not in df.columns:
+        df["dataset_version"] = dataset_version or (
+            meta["dataset_version"] if meta else f"v{pd.Timestamp.now().strftime('%Y%m%d%H%M%S')}"
+        )
+
+    dataset_ver = df["dataset_version"].iloc[0]
+
+    # --------------------------
+    # Check existing rows
+    # --------------------------
     with engine.connect() as conn:
         try:
             cnt = conn.execute("SELECT COUNT(1) FROM terms_enrollment").scalar()
         except Exception:
             cnt = 0
 
+    print(f"📦 Existing rows in DB: {cnt}")
+
+    # --------------------------
+    # Load strategy
+    # --------------------------
     if overwrite:
+        print("⚠️ Overwriting table...")
         df.to_sql("terms_enrollment", engine, if_exists="replace", index=False)
+
     elif append:
+        print("➕ Appending new data...")
         df.to_sql("terms_enrollment", engine, if_exists="append", index=False)
+
     else:
         if cnt == 0:
+            print("📥 First load → inserting dataset...")
             df.to_sql("terms_enrollment", engine, if_exists="replace", index=False)
         else:
-            print(f"terms_enrollment already has {cnt} rows — skipping load (use overwrite=True or append=True).")
+            print("⏭️ Data already exists — skipping load")
 
-    # record dataset_versions row if meta present or dataset_version known
-    dataset_ver = df["dataset_version"].iloc[0]
-    if meta is None:
-        rows = len(df)
-        file_path = DATASET_FILE
-    else:
-        rows = meta["rows"]
-        file_path = meta["file"]
+    # --------------------------
+    # Track dataset version
+    # --------------------------
+    rows = len(df)
 
     conn = get_connection()
     conn.execute(
-        "INSERT OR REPLACE INTO dataset_versions (dataset_version, created_at, rows_generated, notes) VALUES (?, datetime('now'), ?, ?)",
+        """
+        INSERT OR REPLACE INTO dataset_versions 
+        (dataset_version, created_at, rows_generated, notes)
+        VALUES (?, datetime('now'), ?, ?)
+        """,
         (dataset_ver, rows, note)
     )
     conn.commit()
     conn.close()
+
+    print(f"✅ Dataset loaded | Version: {dataset_ver} | Rows: {rows}")
+
+
+# ==============================
+# MAIN
+# ==============================
+if __name__ == "__main__":
+
+    print("\n🚀 LOADING DATA PIPELINE\n")
+
+    create_tables()
+
+    load_dataset(
+        append=True,  # 🔥 ALWAYS APPEND
+        dataset_version=None,
+        seed=None,    # 🔥 NEW DATA EVERY RUN
+        note="Run via main.py"
+    )
+
+    print("\n✅ DATA PIPELINE COMPLETE\n")
