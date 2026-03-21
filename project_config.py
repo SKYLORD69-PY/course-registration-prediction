@@ -37,9 +37,29 @@ DATABASE_URL = f"sqlite:///{DATABASE_FILE}"
 # Model Paths
 # ==============================
 
-MODEL_FOLDER = os.path.join(BASE_DIR, "models", "saved_models")
+MODEL_BASE_FOLDER = os.path.join(BASE_DIR, "models")
 
-MODEL_REGISTRY = os.path.join(BASE_DIR, "models", "model_registry.json")
+MODEL_VERSION = "v2"   # 🔥 change this when training new version
+
+MODEL_FOLDER = os.path.join(MODEL_BASE_FOLDER, MODEL_VERSION)
+
+MODEL_REGISTRY = os.path.join(MODEL_FOLDER, "model_registry.json")
+
+MASTER_REGISTRY = os.path.join(MODEL_BASE_FOLDER, "model_registry_master.json")
+
+# ==============================
+# Model Paths
+# ==============================
+
+MODEL_BASE_FOLDER = os.path.join(BASE_DIR, "models")
+
+MODEL_VERSION = "v2"   # current active training version
+
+MODEL_FOLDER = os.path.join(MODEL_BASE_FOLDER, MODEL_VERSION)
+MODEL_REGISTRY = os.path.join(MODEL_FOLDER, "model_registry.json")
+
+MASTER_REGISTRY = os.path.join(MODEL_BASE_FOLDER, "model_registry_master.json")
+ACTIVE_VERSION_FILE = os.path.join(MODEL_BASE_FOLDER, "active_version.txt")
 
 
 # ==============================
@@ -55,7 +75,7 @@ REPORTS_FOLDER = os.path.join(BASE_DIR, "artifacts", "reports")
 # Machine Learning Settings
 # ==============================
 
-TARGET_COLUMN = "enrollment_next_term"
+TARGET_COLUMN = "enrollment_this_term"
 
 FEATURE_COLUMNS = [
     "school",
