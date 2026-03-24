@@ -5,14 +5,13 @@ import sys
 import pandas as pd
 
 # ==============================
-# Fix import path (IMPORTANT)
+# Fix import path
 # ==============================
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 sys.path.append(PROJECT_ROOT)
 
 from database.db_connection import get_engine, get_connection
 from database.generate_dataset import generate
-from project_config import DATASET_FILE
 
 
 # ==============================
@@ -21,11 +20,7 @@ from project_config import DATASET_FILE
 def create_tables():
     conn = get_connection()
 
-    sql_path = os.path.join(
-        PROJECT_ROOT,
-        "database",
-        "create_tables.sql"
-    )
+    sql_path = os.path.join(PROJECT_ROOT, "database", "create_tables.sql")
 
     with open(sql_path, "r") as f:
         sql_script = f.read()
@@ -38,11 +33,11 @@ def create_tables():
 
 
 # ==============================
-# LOAD DATASET
+# LOAD DATASET (FIXED)
 # ==============================
 def load_dataset(
     overwrite=False,
-    append=True,   # 🔥 default append for SaaS behavior
+    append=True,
     dataset_version=None,
     generate_if_missing=True,
     seed=None,
@@ -51,31 +46,32 @@ def load_dataset(
     engine = get_engine()
 
     # --------------------------
-    # Generate dataset if missing
+    # 🔥 ALWAYS GENERATE NEW DATA
     # --------------------------
-    if not os.path.exists(DATASET_FILE):
-        print("📊 Dataset not found → generating new dataset...")
+    print("📊 Generating new dataset...")
 
-        meta = generate(
-            out_csv=DATASET_FILE,
-            dataset_version=dataset_version or f"v{pd.Timestamp.now().strftime('%Y%m%d%H%M%S')}",
-            seed=seed
-        )
-    else:
-        meta = None
+    meta = generate(
+        dataset_version=dataset_version,   # ✅ FIXED
+        seed=seed
+    )
+
+    # safety check
+    if not meta or "file" not in meta:
+        raise ValueError("Dataset generation failed — no file returned")
+
+    file_path = meta["file"]
+    dataset_ver = meta.get("dataset_version", "unknown")
 
     # --------------------------
     # Load CSV
     # --------------------------
-    df = pd.read_csv(DATASET_FILE)
+    df = pd.read_csv(file_path)
 
-    # Ensure dataset_version column exists
+    # --------------------------
+    # Ensure dataset_version column
+    # --------------------------
     if "dataset_version" not in df.columns:
-        df["dataset_version"] = dataset_version or (
-            meta["dataset_version"] if meta else f"v{pd.Timestamp.now().strftime('%Y%m%d%H%M%S')}"
-        )
-
-    dataset_ver = df["dataset_version"].iloc[0]
+        df["dataset_version"] = dataset_ver
 
     # --------------------------
     # Check existing rows
@@ -125,6 +121,8 @@ def load_dataset(
 
     print(f"✅ Dataset loaded | Version: {dataset_ver} | Rows: {rows}")
 
+    return meta
+
 
 # ==============================
 # MAIN
@@ -136,9 +134,8 @@ if __name__ == "__main__":
     create_tables()
 
     load_dataset(
-        append=True,  # 🔥 ALWAYS APPEND
-        dataset_version=None,
-        seed=None,    # 🔥 NEW DATA EVERY RUN
+        append=True,
+        seed=None,
         note="Run via main.py"
     )
 

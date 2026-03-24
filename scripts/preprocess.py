@@ -27,24 +27,6 @@ def load_data():
 
 
 # -----------------------------
-# Create Prediction Target
-# -----------------------------
-def create_target(df):
-
-    df = df.sort_values(["school", "term_start_date"])
-
-    df["enrollment_next_term"] = (
-        df.groupby("school")["enrollment_this_term"].shift(-1)
-    )
-
-    df = df.dropna(subset=["enrollment_next_term"])
-
-    df["enrollment_next_term"] = df["enrollment_next_term"].astype(int)
-
-    return df
-
-
-# -----------------------------
 # Remove Leakage Columns
 # -----------------------------
 def remove_leakage_columns(df):
@@ -98,8 +80,6 @@ def prepare_features(df):
 def preprocess_pipeline():
 
     df = load_data()
-
-    df = create_target(df)
 
     df = remove_leakage_columns(df)
 

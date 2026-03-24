@@ -14,24 +14,26 @@ sys.path.append(PROJECT_ROOT)
 
 from scripts.preprocess import preprocess_pipeline
 from database.db_connection import get_engine
-from project_config import MODEL_FOLDER, RANDOM_STATE, TEST_SIZE
+from project_config import (
+    MODEL_BASE_FOLDER,
+    RANDOM_STATE,
+    TEST_SIZE
+)
 
 
 # -----------------------------
 # Safe MAPE
 # -----------------------------
 def mean_absolute_percentage_error(y_true, y_pred):
-
     y_true = np.array(y_true)
     y_pred = np.array(y_pred)
-
     return np.mean(np.abs((y_true - y_pred) / np.maximum(y_true, 1))) * 100
 
 
 # -----------------------------
 # Evaluate Model
 # -----------------------------
-def evaluate_model():
+def evaluate_model(version):
 
     print("Running preprocessing pipeline...\n")
 
@@ -44,10 +46,14 @@ def evaluate_model():
         random_state=RANDOM_STATE
     )
 
-    model_path = os.path.join(MODEL_FOLDER, "best_model.joblib")
+    model_path = os.path.join(
+        MODEL_BASE_FOLDER,
+        version,
+        "best_model.joblib"
+    )
 
     if not os.path.exists(model_path):
-        raise FileNotFoundError("Model not found. Run train.py first.")
+        raise FileNotFoundError(f"❌ Model not found for version {version}")
 
     model = joblib.load(model_path)
 
@@ -58,7 +64,7 @@ def evaluate_model():
     r2 = r2_score(y_test, y_pred)
     mape = mean_absolute_percentage_error(y_test, y_pred)
 
-    print("MODEL EVALUATION RESULTS\n")
+    print(f"\n📊 MODEL EVALUATION ({version})\n")
 
     print(f"MAE : {mae:.3f}")
     print(f"RMSE: {rmse:.3f}")
@@ -71,9 +77,16 @@ def evaluate_model():
 # -----------------------------
 # Log Model History
 # -----------------------------
-def log_model_history(mae, rmse, r2, mape):
+def log_model_history(mae, rmse, r2, mape, version):
 
-    registry_path = os.path.join(MODEL_FOLDER, "model_registry.json")
+    registry_path = os.path.join(
+        MODEL_BASE_FOLDER,
+        version,
+        "model_registry.json"
+    )
+
+    if not os.path.exists(registry_path):
+        raise FileNotFoundError(f"❌ Registry not found for version {version}")
 
     with open(registry_path, "r") as f:
         registry = json.load(f)
@@ -81,14 +94,23 @@ def log_model_history(mae, rmse, r2, mape):
     engine = get_engine()
 
     df = pd.DataFrame([{
-        "model_version": registry["version"],
+        "model_version": version,
         "model_type": registry["best_model"],
         "training_date": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+
         "mae": mae,
         "rmse": rmse,
         "r2": r2,
         "mape": mape,
-        "model_path": os.path.join(MODEL_FOLDER, "best_model.joblib")
+
+        # 🔥 IMPORTANT (dashboard consistency)
+        "training_rows": registry.get("training_rows", None),
+
+        "model_path": os.path.join(
+            MODEL_BASE_FOLDER,
+            version,
+            "best_model.joblib"
+        )
     }])
 
     df.to_sql(
@@ -98,7 +120,7 @@ def log_model_history(mae, rmse, r2, mape):
         index=False
     )
 
-    print("\nModel evaluation stored in SQL database")
+    print("✅ Model evaluation stored in database")
 
 
 # -----------------------------
@@ -106,6 +128,8 @@ def log_model_history(mae, rmse, r2, mape):
 # -----------------------------
 if __name__ == "__main__":
 
-    mae, rmse, r2, mape = evaluate_model()
+    version = "v_test"
 
-    log_model_history(mae, rmse, r2, mape)
+    mae, rmse, r2, mape = evaluate_model(version)
+
+    log_model_history(mae, rmse, r2, mape, version)

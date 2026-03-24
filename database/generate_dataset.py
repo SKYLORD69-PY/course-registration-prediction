@@ -1,14 +1,4 @@
-# synth_generator_final_v2.py
-"""
-Final generator v2.
-
-Key changes from earlier versions:
-- Removed num_compulsory_eligible column.
-- Added warmup period (warmup_years) to populate prev_term_enrollment and prev2_term_enrollment.
-- Correctly add new Year1 intake to compulsory pool only at 'independence' term of each academic year.
-- Separate school population vs enrolled students.
-- Output column 'enrollment_this_term' (you can use this as target shifted by 1 term for next-term prediction).
-"""
+# database/generate_dataset.py
 
 import os
 import random
@@ -16,11 +6,6 @@ import numpy as np
 import pandas as pd
 from datetime import date
 import time
-
-seed = None
-
-if seed is None:
-    seed = int(time.time())
 
 
 # -------------------------
@@ -36,9 +21,9 @@ SCHOOLS = {
 
 TERMS = [
     ("independence", 7, 1.00),
-    ("festivals",   10, 0.90),
-    ("republic",    1, 0.80),
-    ("colors",      4, 0.65),
+    ("festivals", 10, 0.90),
+    ("republic", 1, 0.80),
+    ("colors", 4, 0.65),
 ]
 
 YEAR_WEIGHTS = [0.45, 0.35, 0.15, 0.05]
@@ -50,266 +35,192 @@ GE_BASE_RATE = 0.08
 COMPULSORY_DRAIN_MIN, COMPULSORY_DRAIN_MAX = 0.15, 0.35
 NOISE_STD = 4.0
 
+
 # -------------------------
 # Helpers
 # -------------------------
 def jitter_remaining_credits(term_label):
-    if term_label == "independence":
-        return float(np.round(np.random.uniform(26.0, 28.0), 2))
-    elif term_label == "festivals":
-        return float(np.round(np.random.uniform(15.0, 17.0), 2))
-    elif term_label == "republic":
-        return float(np.round(np.random.uniform(4.0, 6.0), 2))
-    elif term_label == "colors":
-        return float(np.round(np.random.uniform(0.0, 3.0), 2))
-    else:
-        return float(np.round(np.random.uniform(0.0, 10.0), 2))
+    ranges = {
+        "independence": (26.0, 28.0),
+        "festivals": (15.0, 17.0),
+        "republic": (4.0, 6.0),
+        "colors": (0.0, 3.0),
+    }
+    low, high = ranges.get(term_label, (0.0, 10.0))
+    return float(np.round(np.random.uniform(low, high), 2))
+
 
 def _make_term_sequence(start_year, years, warmup_years):
-    # returns list of (year, term_label, month, term_multiplier) covering warmup + requested years
     seq = []
     start = start_year - warmup_years
     end = start_year + years - 1
+
     for y in range(start, end + 1):
         for term_label, month, mult in TERMS:
             seq.append((y, term_label, month, mult))
+
     return seq
 
+
 # -------------------------
-# Generator
+# MAIN GENERATOR
 # -------------------------
 def generate(
     years=6,
     start_year=2020,
     warmup_years=2,
-    out_csv="data/engineering_workshop_term_school.csv",
-    dataset_version="v1.2",
-    seed=None
-    
+    out_csv=None,
+    dataset_version=None,
+    seed=None,
 ):
-    """
-    years: number of *output* years (not counting warmup)
-    warmup_years: how many years BEFORE start_year to simulate as warmup (default 2)
-    """
 
-   
-    
+    # 🔥 AUTO VERSIONING
+    if dataset_version is None:
+        dataset_version = f"v{int(time.time())}"
+
+    # 🔥 UNIQUE FILE PER RUN
+    if out_csv is None:
+        out_csv = f"data/dataset_{dataset_version}.csv"
+
+    # 🔥 RANDOM SEED
+    if seed is None:
+        seed = int(time.time())
+
     random.seed(seed)
     np.random.seed(seed)
 
     rows_all = []
 
-    # initial intake (Year1) per school
-    intake_by_school = {s: random.randint(info["min_intake"], info["max_intake"]) for s, info in SCHOOLS.items()}
+    intake_by_school = {
+        s: random.randint(info["min_intake"], info["max_intake"])
+        for s, info in SCHOOLS.items()
+    }
 
-    # prev tracker: per school [prev_term_enrollment, prev2_term_enrollment]
     prev_tracker = {s: [0, 0] for s in SCHOOLS.keys()}
-
-    # compulsory pool per school (number of students that still need to do the workshop sometime)
     compulsory_pool = {s: None for s in SCHOOLS.keys()}
 
-    # Build chronological sequence (including warmup)
     seq = _make_term_sequence(start_year, years, warmup_years)
 
     for (year_iter, term_label, month, term_multiplier) in seq:
         term_year = year_iter if month >= 7 else year_iter + 1
         term_start = date(term_year, month, 1)
 
-        # If this is the 'independence' term for the academic year, apply growth to intake (new admits arrive)
-        is_independence = (term_label == "independence")
+        is_independence = term_label == "independence"
+
         if is_independence:
-            # apply year-on-year growth to intake
             growth = 1.0 + random.uniform(0.02, 0.07)
             for s in intake_by_school:
-                intake_by_school[s] = max(1, int(round(intake_by_school[s] * growth)))
+                intake_by_school[s] = max(
+                    1, int(round(intake_by_school[s] * growth))
+                )
 
         for school in SCHOOLS.keys():
-            # ---------- population snapshot (school population by year)
-            # We use the current intake as year1 population, then small jitter for other years
-            school_year1_population = intake_by_school[school]
-            school_year2_population = int(max(0, round(intake_by_school[school] * random.uniform(0.88, 1.06))))
-            school_year3_population = int(max(0, round(intake_by_school[school] * random.uniform(0.78, 0.96))))
-            school_year4_population = int(max(0, round(intake_by_school[school] * random.uniform(0.68, 0.92))))
-            total_students = (school_year1_population + school_year2_population +
-                              school_year3_population + school_year4_population)
 
-            # initialize compulsory pool first time we know total_students for the school
+            y1 = intake_by_school[school]
+            y2 = int(y1 * random.uniform(0.88, 1.06))
+            y3 = int(y1 * random.uniform(0.78, 0.96))
+            y4 = int(y1 * random.uniform(0.68, 0.92))
+            total_students = y1 + y2 + y3 + y4
+
             if compulsory_pool[school] is None:
-                # eligible pool equals total_students for VSST else 0
                 compulsory_pool[school] = total_students if school == "VSST" else 0
 
-            # If new intake arrived at this independence term (is_independence) then add those new Year1 students
-            # to VSST compulsory pool (they become eligible). For non-VSST, no compulsory effect.
             if is_independence and school == "VSST":
-                # Add the new cohort that just arrived
-                compulsory_pool[school] += school_year1_population
+                compulsory_pool[school] += y1
 
-            # ---------- credits
             avg_remaining_credits = jitter_remaining_credits(term_label)
 
-            # ---------- base expected (non-compulsory) demand
-            base_rate = random.uniform(BASE_RATE_LOW, BASE_RATE_HIGH)
-            elective_rate = random.uniform(ELECTIVE_RATE_LOW, ELECTIVE_RATE_HIGH)
-            base_interest = total_students * base_rate
-            elective_component = total_students * elective_rate
+            base_interest = total_students * random.uniform(BASE_RATE_LOW, BASE_RATE_HIGH)
+            elective = total_students * random.uniform(ELECTIVE_RATE_LOW, ELECTIVE_RATE_HIGH)
 
-            if school == "VSST":
-                ge_component = 0.0
-            else:
-                ge_strength = (avg_remaining_credits / 40.0)
-                ge_component = total_students * GE_BASE_RATE * ge_strength
+            ge = 0
+            if school != "VSST":
+                ge = total_students * GE_BASE_RATE * (avg_remaining_credits / 40.0)
 
-            raw_expected = (base_interest + elective_component + ge_component) * term_multiplier
+            raw_expected = (base_interest + elective + ge) * term_multiplier
 
-            # ---------- momentum
             prev_term = prev_tracker[school][0]
             prev2_term = prev_tracker[school][1]
+
             raw_expected += 0.10 * prev_term + 0.05 * prev2_term
 
-            # ---------- compulsory taken this term (from pool)
             if compulsory_pool[school] > 0:
-                drain_frac = random.uniform(COMPULSORY_DRAIN_MIN, COMPULSORY_DRAIN_MAX)
-                candidate = int(round(compulsory_pool[school] * drain_frac * term_multiplier))
-                num_compulsory = min(compulsory_pool[school], candidate, total_students)
+                drain = random.uniform(COMPULSORY_DRAIN_MIN, COMPULSORY_DRAIN_MAX)
+                num_compulsory = int(compulsory_pool[school] * drain * term_multiplier)
+                num_compulsory = min(num_compulsory, compulsory_pool[school])
             else:
                 num_compulsory = 0
 
-            compulsory_pool[school] = max(0, int(round(compulsory_pool[school] - num_compulsory)))
+            compulsory_pool[school] -= num_compulsory
 
-            # ---------- combine and noise
             noise = np.random.normal(0, NOISE_STD)
-            enrollment_est = int(round(max(0, raw_expected + num_compulsory + noise)))
+            enrollment = int(max(0, raw_expected + num_compulsory + noise))
 
-            if enrollment_est < num_compulsory:
-                enrollment_est = int(num_compulsory)
+            if enrollment < num_compulsory:
+                enrollment = num_compulsory
 
-            # ---------- allocate non-compulsory reasons
-            non_comp = enrollment_est - num_compulsory
+            non_comp = enrollment - num_compulsory
+
             if school == "VSST":
-                # VSST: ge = 0
-                if non_comp > 0:
-                    num_elective = int(round(non_comp * random.uniform(0.55, 0.85)))
-                    num_other = non_comp - num_elective
-                else:
-                    num_elective = num_other = 0
+                num_elective = int(non_comp * 0.7)
+                num_other = non_comp - num_elective
                 num_ge = 0
             else:
-                if non_comp > 0:
-                    ge_frac = random.uniform(0.45, 0.70)
-                    num_ge = int(round(non_comp * ge_frac))
-                    rem_after_ge = non_comp - num_ge
-                    num_elective = int(round(rem_after_ge * random.uniform(0.55, 0.85)))
-                    num_other = rem_after_ge - num_elective
-                else:
-                    num_ge = num_elective = num_other = 0
+                num_ge = int(non_comp * 0.6)
+                rem = non_comp - num_ge
+                num_elective = int(rem * 0.7)
+                num_other = rem - num_elective
 
-            # ---------- final target: enrollment_this_term
             enrollment_this_term = num_compulsory + num_ge + num_elective + num_other
 
-            # ---------- distribute enrolled students across study years
-            if enrollment_this_term > 0:
-                enrolled_year1, enrolled_year2, enrolled_year3, enrolled_year4 = \
-                    np.random.multinomial(enrollment_this_term, YEAR_WEIGHTS)
-            else:
-                enrolled_year1 = enrolled_year2 = enrolled_year3 = enrolled_year4 = 0
+            enrolled = np.random.multinomial(enrollment_this_term, YEAR_WEIGHTS)
 
-            # ---------- recent trend (before updating prevs)
-            recent_trend = prev_term - prev2_term
+            prev_tracker[school] = [enrollment_this_term, prev_term]
 
-            # ---------- update prev tracker
-            prev_tracker[school][1] = prev_tracker[school][0]
-            prev_tracker[school][0] = enrollment_this_term
-
-            # ---------- append row (we include prevs so warmup rows will have prevs for later)
             rows_all.append({
                 "term_start_date": term_start,
                 "year": year_iter,
                 "term_label": term_label,
                 "school": school,
-                # population
-                "school_year1_population": int(school_year1_population),
-                "school_year2_population": int(school_year2_population),
-                "school_year3_population": int(school_year3_population),
-                "school_year4_population": int(school_year4_population),
-                "total_students_in_school": int(total_students),
-                # enrollment (workshop) by study year
-                "enrolled_year1": int(enrolled_year1),
-                "enrolled_year2": int(enrolled_year2),
-                "enrolled_year3": int(enrolled_year3),
-                "enrolled_year4": int(enrolled_year4),
-                "enrollment_this_term": int(enrollment_this_term),
-                # reasons
-                "num_compulsory": int(num_compulsory),
-                "num_ge": int(num_ge),
-                "num_elective": int(num_elective),
-                "num_other": int(num_other),
-                # credits & lag
-                "avg_remaining_credits": float(avg_remaining_credits),
-                "prev_term_enrollment": int(prev_term),
-                "prev2_term_enrollment": int(prev2_term),
-                "recent_trend": int(recent_trend),
+                "school_year1_population": y1,
+                "school_year2_population": y2,
+                "school_year3_population": y3,
+                "school_year4_population": y4,
+                "total_students_in_school": total_students,
+                "enrolled_year1": enrolled[0],
+                "enrolled_year2": enrolled[1],
+                "enrolled_year3": enrolled[2],
+                "enrolled_year4": enrolled[3],
+                "enrollment_this_term": enrollment_this_term,
+                "num_compulsory": num_compulsory,
+                "num_ge": num_ge,
+                "num_elective": num_elective,
+                "num_other": num_other,
+                "avg_remaining_credits": avg_remaining_credits,
+                "prev_term_enrollment": prev_term,
+                "prev2_term_enrollment": prev2_term,
+                "recent_trend": prev_term - prev2_term,
+                "dataset_version": dataset_version
             })
 
-    # -------------------------
-    # Build DataFrame and filter out warmup
-    # -------------------------
-    df_all = pd.DataFrame(rows_all)
+    df = pd.DataFrame(rows_all)
+    df = df[df["year"] >= start_year].reset_index(drop=True)
 
-    # warmup ends at start_year - 1? We built seq starting (start_year - warmup_years).
-    # Keep only rows whose year >= start_year
-    df_out = df_all[df_all["year"] >= start_year].reset_index(drop=True)
-
-    # -------------------------
-    # Post-fixes: enforce invariants
-    # -------------------------
-    # total_students_in_school == sum(pop columns)
-    pop_sum = df_out[["school_year1_population", "school_year2_population",
-                      "school_year3_population", "school_year4_population"]].sum(axis=1)
-    df_out["total_students_in_school"] = pop_sum.astype(int)
-
-    # enrollment_this_term == sum(enrolled_year*)
-    enrolled_sum = df_out[["enrolled_year1", "enrolled_year2", "enrolled_year3", "enrolled_year4"]].sum(axis=1)
-    mismatch = df_out["enrollment_this_term"] - enrolled_sum
-    if mismatch.abs().sum() != 0:
-        df_out["enrolled_year4"] = df_out["enrolled_year4"] + mismatch
-
-    # enrollment_this_term == sum(reason columns
-    reason_sum = df_out[["num_compulsory", "num_ge", "num_elective", "num_other"]].sum(axis=1)
-    mismatch2 = df_out["enrollment_this_term"] - reason_sum
-    if mismatch2.abs().sum() != 0:
-        df_out["num_other"] = df_out["num_other"] + mismatch2
-
-    # final asserts (should hold)
-    assert (df_out["total_students_in_school"] ==
-            df_out[["school_year1_population", "school_year2_population",
-                    "school_year3_population", "school_year4_population"]].sum(axis=1)).all(), "Population invariant failed"
-    assert (df_out["enrollment_this_term"] ==
-            df_out[["enrolled_year1", "enrolled_year2", "enrolled_year3", "enrolled_year4"]].sum(axis=1)).all(), "Enrollment-year invariant failed"
-    assert (df_out["enrollment_this_term"] ==
-            df_out[["num_compulsory", "num_ge", "num_elective", "num_other"]].sum(axis=1)).all(), "Reason invariant failed"
-
-    # Save
-    import os
     os.makedirs(os.path.dirname(out_csv), exist_ok=True)
-    df_out["dataset_version"] = dataset_version
-    df_out.to_csv(out_csv, index=False)
-    print(f"Generated {out_csv} with {len(df_out)} rows (warmup_years={warmup_years})")
-    
-    return {
-    "dataset_version": dataset_version,
-    "rows": len(df_out),
-    "file": out_csv
-}
+    df.to_csv(out_csv, index=False)
 
-    
+    print(f"✅ Generated {len(df)} rows | Version: {dataset_version}")
+
+    return {
+        "dataset_version": dataset_version,
+        "rows": len(df),
+        "file": out_csv
+    }
+
 
 # -------------------------
-# If run as script
+# RUN
 # -------------------------
 if __name__ == "__main__":
-    meta = generate(years=6, start_year=2020, warmup_years=2)
-    df = pd.read_csv(meta["file"])
-    with pd.option_context("display.max_rows", 12, "display.max_columns", None):
-        print(df.head(12).to_string(index=False))
-
-
+    meta = generate()
+    print(meta)

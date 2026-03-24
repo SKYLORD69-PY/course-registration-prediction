@@ -25,7 +25,6 @@ from scripts.preprocess import preprocess_pipeline
 from project_config import (
     MODEL_BASE_FOLDER,
     MASTER_REGISTRY,
-    ACTIVE_VERSION_FILE,
     RANDOM_STATE,
     TEST_SIZE
 )
@@ -41,12 +40,18 @@ def safe_mape(y_true, y_pred):
 # -----------------------------
 # Train Models
 # -----------------------------
-def train_models(model_version="v2", activate=True):
+def train_models(version):
 
-    print(f"\n🚀 Training model version: {model_version}\n")
+    print(f"\n🚀 Training model version: {version}\n")
 
+    # -----------------------------
+    # Load Data
+    # -----------------------------
     X, y = preprocess_pipeline()
 
+    # -----------------------------
+    # Feature Split
+    # -----------------------------
     categorical_cols = ["school", "term_label"]
     numeric_cols = [col for col in X.columns if col not in categorical_cols]
 
@@ -55,6 +60,9 @@ def train_models(model_version="v2", activate=True):
         ("num", "passthrough", numeric_cols)
     ])
 
+    # -----------------------------
+    # Models
+    # -----------------------------
     models = {
         "LinearRegression": LinearRegression(),
         "Ridge": Ridge(),
@@ -62,14 +70,22 @@ def train_models(model_version="v2", activate=True):
         "GradientBoosting": GradientBoostingRegressor(random_state=RANDOM_STATE),
     }
 
+    # -----------------------------
+    # Train/Test Split
+    # -----------------------------
     X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=TEST_SIZE, random_state=RANDOM_STATE
+        X, y,
+        test_size=TEST_SIZE,
+        random_state=RANDOM_STATE
     )
 
     results = {}
 
     print("MODEL TRAINING RESULTS\n")
 
+    # -----------------------------
+    # Train All Models
+    # -----------------------------
     for name, model in models.items():
 
         pipeline = Pipeline([
@@ -85,12 +101,7 @@ def train_models(model_version="v2", activate=True):
         r2 = r2_score(y_test, y_pred)
         mape = safe_mape(y_test, y_pred)
 
-        print(f"Model: {name}")
-        print(f"MAE : {mae:.3f}")
-        print(f"RMSE: {rmse:.3f}")
-        print(f"R2  : {r2:.3f}")
-        print(f"MAPE: {mape:.2f}%")
-        print("-" * 30)
+        print(f"{name} → R2={r2:.3f}")
 
         results[name] = {
             "pipeline": pipeline,
@@ -104,34 +115,35 @@ def train_models(model_version="v2", activate=True):
     # Select Best Model
     # -----------------------------
     best_model_name = max(results, key=lambda x: results[x]["r2"])
-    best_model = results[best_model_name]["pipeline"]
+    best_pipeline = results[best_model_name]["pipeline"]
 
-    print("\nBest Model Selected:", best_model_name)
+    print(f"\n🏆 Best Model: {best_model_name}")
 
     # -----------------------------
-    # Save Model (versioned)
+    # Save Model
     # -----------------------------
-    model_dir = os.path.join(MODEL_BASE_FOLDER, model_version)
+    model_dir = os.path.join(MODEL_BASE_FOLDER, version)
     os.makedirs(model_dir, exist_ok=True)
 
     model_path = os.path.join(model_dir, "best_model.joblib")
-    joblib.dump(best_model, model_path)
-
-    print("Model saved to:", model_path)
+    joblib.dump(best_pipeline, model_path)
 
     # -----------------------------
-    # Save Registry
+    # Create Registry
     # -----------------------------
     registry = {
         "model_name": "Workshop Enrollment Predictor",
-        "version": model_version,
+        "version": version,
+
         "best_model": best_model_name,
+
         "metrics": {
             "mae": results[best_model_name]["mae"],
             "rmse": results[best_model_name]["rmse"],
             "r2": results[best_model_name]["r2"],
             "mape": results[best_model_name]["mape"]
         },
+
         "all_models": {
             name: {
                 "mae": results[name]["mae"],
@@ -141,15 +153,17 @@ def train_models(model_version="v2", activate=True):
             }
             for name in results
         },
+
+        # 🔥 VERY IMPORTANT (for dashboard correctness)
+        "training_rows": int(len(X)),
+
         "trained_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     }
 
+    # Save registry JSON
     registry_path = os.path.join(model_dir, "model_registry.json")
-
     with open(registry_path, "w") as f:
         json.dump(registry, f, indent=4)
-
-    print("Model registry saved to:", registry_path)
 
     # -----------------------------
     # Update Master Registry
@@ -160,10 +174,14 @@ def train_models(model_version="v2", activate=True):
     else:
         master = []
 
+    # remove duplicate version if exists
+    master = [m for m in master if m["version"] != version]
+
     master.append({
-        "version": model_version,
+        "version": version,
         "best_model": best_model_name,
         "metrics": registry["metrics"],
+        "training_rows": registry["training_rows"],
         "trained_at": registry["trained_at"],
         "path": model_dir
     })
@@ -171,20 +189,13 @@ def train_models(model_version="v2", activate=True):
     with open(MASTER_REGISTRY, "w") as f:
         json.dump(master, f, indent=4)
 
-    print("Master registry updated")
+    print("✅ Training complete\n")
 
-    # -----------------------------
-    # Set Active Version
-    # -----------------------------
-    if activate:
-        with open(ACTIVE_VERSION_FILE, "w") as f:
-            f.write(model_version)
-
-        print(f"Active model set to {model_version}")
+    return registry
 
 
 # -----------------------------
-# Run
+# Run (for testing only)
 # -----------------------------
 if __name__ == "__main__":
-    train_models(model_version="v2", activate=True)
+    train_models(version="v_test")
