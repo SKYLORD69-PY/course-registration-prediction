@@ -1,45 +1,41 @@
 [
     {
-        "version": "v_unknown",
-        "best_model": null,
-        "metrics": null,
-        "trained_at": null,
-        "path": "c:\\Users\\Lenovo\\Desktop\\hackthon3\\Course_Registrations_Prediction_Model\\models\\v2"
+        "version": "v1",
+        "best_model": "LinearRegression",
+        "metrics": {
+            "mae": 4.907339059248781,
+            "rmse": 6.468163491468127,
+            "r2": 0.8772198030449734,
+            "mape": 47.64536141559727
+        },
+        "training_rows": 120,
+        "trained_at": "2026-03-24 22:34:56",
+        "path": "c:\\Users\\Lenovo\\Desktop\\hackthon3\\Course_Registrations_Prediction_Model\\models\\v1"
     },
     {
         "version": "v2",
         "best_model": "GradientBoosting",
         "metrics": {
-            "mae": 4.751786023306835,
-            "rmse": 6.209770403550991,
-            "r2": 0.9339593490181148,
-            "mape": 84.83094563719051
+            "mae": 4.979771901826138,
+            "rmse": 6.41381715730389,
+            "r2": 0.8539720016039416,
+            "mape": 82.72864729868218
         },
-        "trained_at": "2026-03-19 22:33:07",
+        "training_rows": 240,
+        "trained_at": "2026-03-24 22:37:59",
         "path": "c:\\Users\\Lenovo\\Desktop\\hackthon3\\Course_Registrations_Prediction_Model\\models\\v2"
     },
     {
-        "version": "v2",
-        "best_model": "GradientBoosting",
+        "version": "v3",
+        "best_model": "RandomForest",
         "metrics": {
-            "mae": 4.751786023306835,
-            "rmse": 6.209770403550991,
-            "r2": 0.9339593490181148,
-            "mape": 84.83094563719051
+            "mae": 3.769583333333333,
+            "rmse": 4.731459576306472,
+            "r2": 0.9332007337675232,
+            "mape": 44.592265503010495
         },
-        "trained_at": "2026-03-19 23:15:02",
-        "path": "c:\\Users\\Lenovo\\Desktop\\hackthon3\\Course_Registrations_Prediction_Model\\models\\v2"
-    },
-    {
-        "version": "v2",
-        "best_model": "GradientBoosting",
-        "metrics": {
-            "mae": 4.751786023306835,
-            "rmse": 6.209770403550991,
-            "r2": 0.9339593490181148,
-            "mape": 84.83094563719051
-        },
-        "trained_at": "2026-03-19 23:32:00",
-        "path": "c:\\Users\\Lenovo\\Desktop\\hackthon3\\Course_Registrations_Prediction_Model\\models\\v2"
+        "training_rows": 360,
+        "trained_at": "2026-03-24 22:44:59",
+        "path": "c:\\Users\\Lenovo\\Desktop\\hackthon3\\Course_Registrations_Prediction_Model\\models\\v3"
     }
 ]

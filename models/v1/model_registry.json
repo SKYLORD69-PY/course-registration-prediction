@@ -1,19 +1,39 @@
 {
     "model_name": "Workshop Enrollment Predictor",
-    "version": "v1.2",
-    "description": "improved version of version 1",
-    "algorithms": [
-        "Linear Regression",
-        "Ridge Regression",
-        "Random Forest Regressor",
-        "Gradient Boosting Regressor"
-    ],
-    "best_model": "Random Forest",
+    "version": "v1",
+    "best_model": "LinearRegression",
     "metrics": {
-        "mae": 4.302608695652173,
-        "rmse": 5.452226509697068,
-        "r2": 0.9043346915683174,
-        "mape": 57.58855167974378
+        "mae": 4.907339059248781,
+        "rmse": 6.468163491468127,
+        "r2": 0.8772198030449734,
+        "mape": 47.64536141559727
     },
-    "note": "Binary model file is generated locally via scripts/train.py"
+    "all_models": {
+        "LinearRegression": {
+            "mae": 4.907339059248781,
+            "rmse": 6.468163491468127,
+            "r2": 0.8772198030449734,
+            "mape": 47.64536141559727
+        },
+        "Ridge": {
+            "mae": 5.644570431941841,
+            "rmse": 7.497142730429079,
+            "r2": 0.8350478782226354,
+            "mape": 43.76259595701764
+        },
+        "RandomForest": {
+            "mae": 5.66875,
+            "rmse": 7.073477162376837,
+            "r2": 0.853164096580748,
+            "mape": 36.075640273798
+        },
+        "GradientBoosting": {
+            "mae": 6.21484156209839,
+            "rmse": 8.106603551347366,
+            "r2": 0.8071390874051622,
+            "mape": 37.28640880704434
+        }
+    },
+    "training_rows": 120,
+    "trained_at": "2026-03-24 22:34:56"
 }
