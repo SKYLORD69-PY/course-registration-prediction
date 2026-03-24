@@ -1,101 +1,148 @@
+# main.py
+
 import os
 import sys
 import subprocess
-from datetime import datetime
-from database.db_connection import get_engine
 
-PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
+# ==============================
+# Add project root
+# ==============================
+PROJECT_ROOT = os.path.abspath(os.path.dirname(__file__))
 sys.path.append(PROJECT_ROOT)
 
 # ==============================
-# CONFIG
+# Imports
 # ==============================
-MODEL_BASE_FOLDER = os.path.join(PROJECT_ROOT, "models")
-ACTIVE_VERSION_FILE = os.path.join(MODEL_BASE_FOLDER, "active_version.txt")
+from scripts.load_data import create_tables, load_dataset
+from scripts.train import train_models
+from scripts.evaluate import evaluate_model, log_model_history
+from scripts.eda import run_eda
 
-def run_module(module_name):
-    subprocess.run(
-        [sys.executable, "-m", module_name],
-        check=True,
-        cwd=PROJECT_ROOT
-    )
-# ==============================
-# STEP 1 — GENERATE DATA
-# ==============================
-def generate_data():
-    print("\n📊 Generating dataset...\n")
-    run_module("database.generate_dataset")
-
-
-def load_data():
-    print("\n💾 Loading dataset into DB (APPEND MODE)...\n")
-    
-    import subprocess
-    subprocess.run(
-        [
-            sys.executable,
-            "-m",
-            "scripts.load_data",
-        ],
-        check=True,
-        cwd=PROJECT_ROOT
-    )
-
-
-def train_model():
-    print("\n🤖 Training models (v2)...\n")
-    run_module("scripts.train")
-
-
-def evaluate_model():
-    print("\n📈 Evaluating model...\n")
-    run_module("scripts.evaluate")
+from project_config import MODEL_BASE_FOLDER, ACTIVE_VERSION_FILE
 
 
 # ==============================
-# STEP 5 — ACTIVATE VERSION
+# Version Generator (FINAL)
 # ==============================
-def activate_model(version="v2"):
-    print(f"\n🚀 Activating {version}...\n")
+def generate_new_version():
+    """
+    Simple and correct versioning:
+    - First run → v1
+    - Next → v2, v3...
+    - Ignores active_version.txt
+    """
 
+    if not os.path.exists(MODEL_BASE_FOLDER):
+        return "v1"
+
+    versions = []
+
+    for folder in os.listdir(MODEL_BASE_FOLDER):
+        if folder.startswith("v") and folder[1:].isdigit():
+            versions.append(int(folder[1:]))
+
+    if not versions:
+        return "v1"
+
+    return f"v{max(versions) + 1}"
+
+
+# ==============================
+# Set Active Version
+# ==============================
+def set_active_version(version):
     os.makedirs(MODEL_BASE_FOLDER, exist_ok=True)
 
     with open(ACTIVE_VERSION_FILE, "w") as f:
         f.write(version)
 
-    print(f"✅ {version} is now ACTIVE")
+    print(f"🔥 ACTIVE MODEL SET TO: {version}")
 
 
 # ==============================
-# STEP 6 — RUN DASHBOARD
+# Launch Dashboard
 # ==============================
-def run_dashboard():
-    print("\n🌐 Launching Streamlit dashboard...\n")
+def launch_dashboard():
+    print("\n🌐 Launching Dashboard...\n")
 
-    subprocess.run([
-        "streamlit",
-        "run",
-        "dashboard/app.py"
-    ])
+    dashboard_path = os.path.join(PROJECT_ROOT, "dashboard", "app.py")
+
+    try:
+        subprocess.Popen([
+            sys.executable,
+            "-m",
+            "streamlit",
+            "run",
+            dashboard_path
+        ])
+    except Exception as e:
+        print("❌ Failed to launch dashboard:", e)
 
 
 # ==============================
 # MAIN PIPELINE
 # ==============================
-if __name__ == "__main__":
+def run_pipeline():
 
-    print("\n🔥 EDCAST AI — FULL PIPELINE START 🔥\n")
+    print("\n" + "=" * 60)
+    print("🚀 FULL ML PIPELINE STARTED")
+    print("=" * 60 + "\n")
 
+    # STEP 1: DB SETUP
+    print("📦 STEP 1: Setting up database...")
+    create_tables()
+
+    # STEP 2: LOAD DATA
+    print("\n📊 STEP 2: Loading new dataset...")
+    load_dataset(
+        append=True,
+        dataset_version=None,
+        seed=None,
+        note="Auto run via main.py"
+    )
+
+    # STEP 3: VERSION
+    print("\n🧠 STEP 3: Creating new model version...")
+    version = generate_new_version()
+
+    model_dir = os.path.join(MODEL_BASE_FOLDER, version)
+    os.makedirs(model_dir, exist_ok=True)
+
+    print(f"📁 New version created: {version}")
+
+    # STEP 4: TRAIN
+    print("\n⚙️ STEP 4: Training models...")
+    train_models(version=version)
+
+    # STEP 5: EVALUATE
+    print("\n📈 STEP 5: Evaluating model...")
+    mae, rmse, r2, mape = evaluate_model(version=version)
+
+    # STEP 6: LOG
+    print("\n🧾 STEP 6: Logging model history...")
+    log_model_history(mae, rmse, r2, mape, version)
+
+    # STEP 7: SET ACTIVE
+    print("\n🔥 STEP 7: Updating active model...")
+    set_active_version(version)
+
+    # STEP 8: EDA
+    print("\n📊 STEP 8: Running EDA...")
     try:
-        generate_data()
-        load_data()
-        train_model()
-        evaluate_model()
-        activate_model("v2")
+        run_eda()
+    except Exception as e:
+        print("⚠️ EDA skipped:", e)
 
-        print("\n✅ SYSTEM READY\n")
+    print("\n" + "=" * 60)
+    print("✅ PIPELINE COMPLETED SUCCESSFULLY")
+    print("=" * 60 + "\n")
 
-        run_dashboard()
+    # STEP 9: DASHBOARD
+    launch_dashboard()
 
-    except subprocess.CalledProcessError as e:
-        print("\n❌ PIPELINE FAILED:", e)
+
+# ==============================
+# RUN
+# ==============================
+if __name__ == "__main__":
+    run_pipeline()
