@@ -4,6 +4,8 @@
 
 CREATE TABLE IF NOT EXISTS terms_enrollment (
 
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+
     term_start_date TEXT,
     year INTEGER,
     term_label TEXT,
@@ -35,6 +37,10 @@ CREATE TABLE IF NOT EXISTS terms_enrollment (
     dataset_version TEXT
 );
 
+-- 🔥 Index for fast filtering
+CREATE INDEX IF NOT EXISTS idx_dataset_version
+ON terms_enrollment(dataset_version);
+
 
 -- ==============================
 -- Model history
@@ -52,6 +58,8 @@ CREATE TABLE IF NOT EXISTS model_history (
     rmse REAL,
     r2 REAL,
     mape REAL,
+
+    training_rows INTEGER,   
 
     model_path TEXT
 );
