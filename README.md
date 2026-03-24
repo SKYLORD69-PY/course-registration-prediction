@@ -1,74 +1,77 @@
-# 📊 EduCast AI  
-### Engineering Workshop Enrollment Prediction System
+# 🚀 EduCast AI  
+# Automated ML Pipeline for Engineering Workshop Enrollment Prediction
 
 <p align="center">
   <img src="https://img.shields.io/badge/Python-3.10%2B-blue.svg">
   <img src="https://img.shields.io/badge/ML-Scikit--Learn-orange.svg">
   <img src="https://img.shields.io/badge/Database-SQLite-green.svg">
   <img src="https://img.shields.io/badge/Dashboard-Streamlit-red.svg">
-  <img src="https://img.shields.io/badge/Models-Versioned%20v1%20%7C%20v2-purple.svg">
+  <img src="https://img.shields.io/badge/Pipeline-Fully%20Automated-purple.svg">
 </p>
 
 ---
 
 ## 📌 Overview
 
-**EduCast AI** is an end-to-end machine learning system designed to predict **engineering workshop enrollment for upcoming academic terms**.
+EduCast AI is a fully automated machine learning pipeline that predicts engineering workshop enrollment for upcoming academic terms.
 
-It simulates a real-world ML workflow including data generation, database storage, model training, versioning, and dashboard-based insights.
+Unlike traditional ML projects, this system simulates a real-world lifecycle:
+- New data is generated continuously
+- Models retrain automatically
+- Versions are created every run (v1, v2, v3…)
+- Dashboard reflects live system state
 
 ---
 
 ## 🎯 Problem Statement
 
-Universities need to plan workshop capacity in advance, but enrollment varies based on:
+Universities need to forecast workshop enrollments to:
+- Optimize resources
+- Plan faculty
+- Avoid under/over capacity
 
-- Academic term  
-- School  
-- Year of study  
-- Credit load  
-- Compulsory course rules  
-
-> **How many students will enroll in the Engineering Workshop in the next term?**
+Goal:
+Predict next-term workshop enrollment using historical academic patterns.
 
 ---
 
 ## 🚀 Key Features
 
-- End-to-End ML Pipeline  
-- Domain-aware synthetic dataset  
-- Multiple ML models  
-- Model versioning (v1, v2)  
-- Continuous retraining  
-- Interactive dashboard  
+- Fully Automated ML Pipeline (single command)
+- Synthetic data generation
+- SQL-based data storage
+- Multi-model training (4 models per run)
+- Infinite model versioning (v1 → v2 → v3 → …)
+- Live dashboard with version comparison
+- Continuous retraining system
+- Data drift visibility across versions
 
 ---
 
 ## 🏗️ Project Structure
 
-```bash
 project/
 ├── main.py
 ├── project_config.py
-├── data/
 ├── database/
 ├── scripts/
 ├── models/
 ├── dashboard/
 └── artifacts/
-```
 
 ---
 
-## ⚙️ How It Works
+## ⚙️ Full Pipeline Flow
 
-1. Generate synthetic academic data  
-2. Store data in SQLite  
-3. Preprocess and engineer features  
-4. Train ML models  
-5. Evaluate performance  
-6. Save best model (versioning)  
-7. Visualize via dashboard  
+main.py →
+    generate data →
+    store in SQL →
+    preprocess →
+    train models →
+    evaluate →
+    save version →
+    update active model →
+    launch dashboard
 
 ---
 
@@ -91,132 +94,98 @@ project/
 - Random Forest  
 - Gradient Boosting  
 
+Each run trains all models and selects the best automatically.
+
 ---
 
 ## 🔄 Model Versioning
 
-- v1 → baseline  
-- v2 → improved  
+Every time you run:
 
-Active version stored in:
+Run 1 → v1 → 120 rows  
+Run 2 → v2 → 240 rows  
+Run 3 → v3 → 360 rows  
 
-```bash
+Each version stores:
+- Model file (.joblib)
+- Metrics (model_registry.json)
+
+Active version is stored in:
 models/active_version.txt
-```
 
 ---
 
 ## 📊 Dashboard Features
 
-- Overview  
-- Insights  
-- Predictor  
-- Model Performance  
-- Model Registry  
-- Data Health  
-- V1 vs V2 comparison  
-
----
-
-## 🛠️ Installation
-
-### 1. Clone Repository
-```bash
-git clone https://github.com/your-username/educast-ai.git
-cd educast-ai
-```
-
-### 2. Create Virtual Environment
-```bash
-python -m venv .venv
-```
-
-### 3. Activate Environment
-
-#### Windows
-```bash
-.venv\Scripts\activate
-```
-
-#### macOS / Linux
-```bash
-source .venv/bin/activate
-```
-
-### 4. Upgrade pip
-```bash
-pip install --upgrade pip
-```
-
-### 5. Install Dependencies
-```bash
-pip install -r requirements.txt
-```
+- Dataset Overview (live DB rows)
+- Model Performance across versions
+- Version Comparison (v1 vs v2 vs v3…)
+- Error Heatmaps
+- Model Insights
+- Prediction Interface
 
 ---
 
 ## ▶️ Running the Project
 
-### Run Full Pipeline
-```bash
-python main.py
-```
+Run full pipeline:
 
-### Run Dashboard
-```bash
+python main.py
+
+This will:
+- Generate new data
+- Train new model version
+- Update system
+- Launch dashboard automatically
+
+---
+
+Run dashboard separately:
+
 streamlit run dashboard/app.py
-```
 
 ---
 
 ## 📈 Evaluation Metrics
 
-- MAE  
-- RMSE  
+- MAE (Mean Absolute Error)  
+- RMSE (Root Mean Squared Error)  
 - R² Score  
-- MAPE  
+- MAPE (Mean Absolute Percentage Error)  
 
 ---
 
-## 🔁 Example Workflow
+## 🛠️ Installation
 
-```bash
-# Run pipeline
-python main.py
+git clone https://github.com/your-username/educast-ai.git  
+cd educast-ai  
 
-# Launch dashboard
-streamlit run dashboard/app.py
-```
+python -m venv .venv  
+.venv\Scripts\activate   # Windows  
+
+pip install -r requirements.txt  
 
 ---
 
-## ⚠️ Troubleshooting
+## ⚠️ Important Notes
 
-### Import Errors
-```bash
-# Make sure you're in project root
-cd educast-ai
-```
+- Do NOT commit:
+  - database (.db)
+  - model files (.joblib)
+  - raw datasets  
 
-### Dashboard Not Launching
-```bash
-streamlit run dashboard/app.py
-```
-
-### Reinstall Dependencies
-```bash
-pip install -r requirements.txt --force-reinstall
-```
+- Always run from project root
 
 ---
 
 ## 💡 Key Learnings
 
-- End-to-end ML system design  
-- Data engineering  
-- Model versioning  
-- Dashboard development  
-- Debugging real-world ML issues  
+- End-to-end ML pipeline engineering  
+- Model lifecycle management  
+- SQL data integration  
+- Automated retraining systems  
+- Version-controlled ML workflows  
+- Debugging real-world pipeline issues  
 
 ---
 
@@ -232,10 +201,10 @@ pip install -r requirements.txt --force-reinstall
 
 ## 📌 Summary
 
-**EduCast AI** is a complete machine learning system combining data engineering, model building, and visualization for academic decision-making.
+EduCast AI is not just a model — it is a self-evolving ML system that continuously learns from new data and improves over time.
 
 ---
 
 ## 👨‍💻 Author
 
-Developed as part of an academic ML project focused on real-world system design.
+Developed as part of an academic ML project focused on production-ready system design.
